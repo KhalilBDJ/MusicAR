@@ -4,6 +4,7 @@ using UnityEngine.Audio;
 using System;
 using System.Collections.Generic;
 using TMPro;
+using Unity.VisualScripting;
 
 [RequireComponent(typeof(AudioSource))]
 class Peak
@@ -40,84 +41,92 @@ class IndexComparer : IComparer<Peak>
     }
 }
  
+[RequireComponent(typeof(AudioSource))]
 public class AudioAnalyzer : MonoBehaviour
 {
- 
     public float rmsValue;
     public float dbValue;
     public float pitchValue;
- 
+
     public int qSamples = 1024;
-    public int binSize = 8192; // you can change this up, I originally used 8192 for better resolution, but I stuck with 1024 because it was slow-performing on the phone
+    public int binSize = 8192;
     public float refValue = 0.1f;
     public float threshold = 0.01f;
     public AudioClip test;
- 
- 
+
     private List<Peak> peaks = new List<Peak>();
     float[] samples;
     float[] spectrum;
     int samplerate;
- 
-    public TMP_Text display; // drag a Text object here to display values
+
+    public TMP_Text display;
     public bool mute = true;
-    public AudioMixer masterMixer; // drag an Audio Mixer here in the inspector
- 
- 
+    public AudioMixer masterMixer;
+
+    private string _previousNote;
+    private bool _isPlaying;
+
+    public GameObject _naturalNotes;
+    public GameObject _sharpNotesFlatNotes;
+    private Dictionary<string, GameObject> activeKeys = new Dictionary<string, GameObject>();
+
+
+    // Déclaration du délégué et de l'événement pour le changement de note
+    public delegate void NoteChangedEventHandler(string newNote);
+    public event NoteChangedEventHandler NoteChanged;
+
     void Start()
     {
+        _isPlaying = false;
         samples = new float[qSamples];
         spectrum = new float[binSize];
         samplerate = AudioSettings.outputSampleRate;
- 
-        // starts the Microphone and attaches it to the AudioSource
-        //GetComponent<AudioSource>().clip = Microphone.Start(null, true, 10, samplerate);
-        GetComponent<AudioSource>().loop = true; // Set the AudioClip to loop
-        //while (!(Microphone.GetPosition(null) > 0)) { } // Wait until the recording has started
+
+        GetComponent<AudioSource>().loop = true;
         GetComponent<AudioSource>().Play();
         GetComponent<AudioSource>().PlayOneShot(test);
- 
-        // Mutes the mixer. You have to expose the Volume element of your mixer for this to work. I named mine "masterVolume".
+
         masterMixer.SetFloat("masterVolume", -80f);
     }
- 
+
+    private void Awake()
+    {
+        NoteChanged += HandleNoteChanged;
+    }
+
+    private void OnDestroy()
+    {
+        NoteChanged -= HandleNoteChanged;    }
+
     void Update()
     {
         AnalyzeSound();
-        /*if (display != null)
-        {
-            display.text = "RMS: " + rmsValue.ToString("F2") +
-                " (" + dbValue.ToString("F1") + " dB)\n" +
-                "Pitch: " + pitchValue.ToString("F0") + " Hz";
-        }*/
     }
- 
+
     void AnalyzeSound()
     {
         float[] samples = new float[qSamples];
-        GetComponent<AudioSource>().GetOutputData(samples, 0); // fill array with samples
+        GetComponent<AudioSource>().GetOutputData(samples, 0);
         int i = 0;
         float sum = 0f;
         for (i = 0; i < qSamples; i++)
         {
-            sum += samples[i] * samples[i]; // sum squared samples
+            sum += samples[i] * samples[i];
         }
-        rmsValue = Mathf.Sqrt(sum / qSamples); // rms = square root of average
-        dbValue = 20 * Mathf.Log10(rmsValue / refValue); // calculate dB
-        if (dbValue < -160) dbValue = -160; // clamp it to -160dB min
- 
-        // get sound spectrum
+        rmsValue = Mathf.Sqrt(sum / qSamples);
+        dbValue = 20 * Mathf.Log10(rmsValue / refValue);
+        if (dbValue < -160) dbValue = -160;
+
         GetComponent<AudioSource>().GetSpectrumData(spectrum, 0, FFTWindow.BlackmanHarris);
         float maxV = 0f;
         for (i = 0; i < binSize; i++)
-        { // find max
+        {
             if (spectrum[i] > maxV && spectrum[i] > threshold)
             {
                 peaks.Add(new Peak(spectrum[i], i));
                 if (peaks.Count > 5)
-                { // get the 5 peaks in the sample with the highest amplitudes
-                    peaks.Sort(new AmpComparer()); // sort peak amplitudes from highest to lowest
-                    //peaks.Remove (peaks [5]); // remove peak with the lowest amplitude
+                {
+                    peaks.Sort(new AmpComparer());
                 }
             }
         }
@@ -126,46 +135,113 @@ public class AudioAnalyzer : MonoBehaviour
 
         if (peaks.Count > 0)
         {
-            // Trouver la fréquence dominante
             maxV = peaks[0].amplitude;
             int maxN = peaks[0].index;
-            freqN = maxN; // Passer l'indice à une variable flottante
+            freqN = maxN;
 
             if (maxN > 0 && maxN < binSize - 1)
-            { // Interpoler l'indice en utilisant les voisins
+            {
                 var dL = spectrum[maxN - 1] / spectrum[maxN];
                 var dR = spectrum[maxN + 1] / spectrum[maxN];
                 freqN += 0.5f * (dR * dR - dL * dL);
-            }
-            pitchValue = freqN * (samplerate / 2f) / binSize; // Convertir l'indice en fréquence
+                if (freqN == 0)
+                {
+                    _isPlaying = false;
+                    NoteChanged?.Invoke("");
 
-            // Trouver la note correspondante en fonction de la fréquence
+                }
+                else
+                {
+                    _isPlaying = true;
+                }
+            }
+            pitchValue = freqN * (samplerate / 2f) / binSize;
+
             foreach (var kvp in noteFrequencies)
             {
-                float minFrequency = kvp.Value - 5.0f; // Marge d'incertitude inférieure
-                float maxFrequency = kvp.Value + 5.0f; // Marge d'incertitude supérieure
+                float minFrequency = kvp.Value - 5.0f;
+                float maxFrequency = kvp.Value + 5.0f;
 
                 if (pitchValue >= minFrequency && pitchValue <= maxFrequency)
                 {
                     detectedNote = kvp.Key;
-                    break; // Sortez de la boucle dès que la note est trouvée
+
+                    // Vérification du changement de note et déclenchement de l'événement
+                    if (detectedNote != _previousNote)
+                    {
+                        _previousNote = detectedNote;
+                        NoteChanged?.Invoke(detectedNote);
+                    }
+                    break;
                 }
             }
         }
+       
 
         peaks.Clear();
+        if (detectedNote != "Unknown")
+        {
+            GameObject pianoKey;
+            if (!activeKeys.ContainsKey(detectedNote))
+            {
+                // Instancier un nouveau GameObject pour la touche de piano
+                pianoKey = Instantiate(_naturalNotes, new Vector3(0, 0, 0), Quaternion.identity);
+                activeKeys.Add(detectedNote, pianoKey);
+            }
+            else
+            {
+                pianoKey = activeKeys[detectedNote];
+            }
 
-        // Utilisez la variable detectedNote pour afficher la note détectée
+            var pianoKeyAnimation = pianoKey.GetComponent<PianoKeyAnimation>();
+            if (_isPlaying)
+            {
+                pianoKeyAnimation.PlayNote();
+            }
+            else
+            {
+                pianoKeyAnimation.StopNote();
+                activeKeys.Remove(detectedNote);
+            }
+        }
+
+        // Arrêtez de jouer les notes qui ne sont plus détectées
+        var notesToRemove = new List<string>();
+        foreach (var kvp in activeKeys)
+        {
+            if (kvp.Key != detectedNote || !_isPlaying)
+            {
+                var pianoKeyAnimation = kvp.Value.GetComponent<PianoKeyAnimation>();
+                pianoKeyAnimation.StopNote();
+                notesToRemove.Add(kvp.Key);
+            }
+        }
+
+        foreach (var note in notesToRemove)
+        {
+            activeKeys.Remove(note);
+        }
+
         if (display != null)
         {
             display.text = "RMS: " + rmsValue.ToString("F2") +
                            " (" + dbValue.ToString("F1") + " dB)\n" +
                            "Pitch: " + pitchValue.ToString("F0") + " Hz\n" +
                            "Detected Note: " + detectedNote;
+            Debug.Log("note: " + detectedNote);
+
         }
     }
     
-    Dictionary<string, float> noteFrequencies = new Dictionary<string, float>
+    
+    private void HandleNoteChanged(string newNote)
+    {
+       // Debug.Log("nouvelle note: " + newNote);
+    }
+    
+    
+    
+     private Dictionary<string, float> noteFrequencies = new Dictionary<string, float>
     {
         {"C1", 32.70f},
         {"C#1", 34.65f},
