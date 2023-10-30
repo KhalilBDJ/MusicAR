@@ -111,6 +111,7 @@ public class AudioAnalyzer : MonoBehaviour
         {
             sum += samples[i] * samples[i];
         }
+
         rmsValue = Mathf.Sqrt(sum / qSamples);
         dbValue = 20 * Mathf.Log10(rmsValue / refValue);
         if (dbValue < -160) dbValue = -160;
@@ -128,6 +129,7 @@ public class AudioAnalyzer : MonoBehaviour
                 }
             }
         }
+
         float freqN = 0f;
         string detectedNote = "Unknown";
 
@@ -153,6 +155,7 @@ public class AudioAnalyzer : MonoBehaviour
                     _isPlaying = true;
                 }
             }
+
             pitchValue = freqN * (samplerate / 2f) / binSize;
 
             foreach (var kvp in noteFrequencies)
@@ -167,61 +170,54 @@ public class AudioAnalyzer : MonoBehaviour
                 }
             }
         }
+
         peaks.Clear();
         if (detectedNote != "Unknown")
         {
-            GameObject pianoKey;
-            if (!activeKeys.ContainsKey(detectedNote) && detectedNote.Contains("#"))
+            GameObject pianoKey = pianoKeyPool.GetNote(detectedNote);
+            if (pianoKey != null)
             {
-                pianoKey = pianoKeyPool.GetSharpNote();
-                activeKeys.Add(detectedNote, pianoKey);
-            }
-            else if (!activeKeys.ContainsKey(detectedNote))
-            {
-                pianoKey = pianoKeyPool.GetNaturalNote();
-                activeKeys.Add(detectedNote, pianoKey);
-            }
-            else
-            {
-                pianoKey = activeKeys[detectedNote];
+                var pianoKeyAnimation = pianoKey.GetComponent<PianoKeyAnimation>();
+                if (_isPlaying)
+                {
+                    pianoKeyAnimation.PlayNote();
+                    if (!activeKeys.ContainsKey(detectedNote))
+                    {
+                        activeKeys.Add(detectedNote, pianoKey);
+                    }
+                }
+                else
+                {
+                    pianoKeyAnimation.StopNote();
+                    //pianoKeyPool.ReturnNoteToPool(pianoKey);
+                }
             }
 
-            var pianoKeyAnimation = pianoKey.GetComponent<PianoKeyAnimation>();
-            if (_isPlaying)
+            var notesToRemove = new List<string>();
+            foreach (var kvp in activeKeys)
             {
-                pianoKeyAnimation.PlayNote();
+                if (kvp.Key != detectedNote || !_isPlaying)
+                {
+                    var pianoKeyAnimation = kvp.Value.GetComponent<PianoKeyAnimation>();
+                    pianoKeyAnimation.StopNote();
+                    //pianoKeyPool.ReturnNoteToPool(kvp.Value);
+                    notesToRemove.Add(kvp.Key);
+                }
             }
-            else
+
+            foreach (var note in notesToRemove)
             {
-                pianoKeyAnimation.StopNote();  // Just stop the note, don't return it to the pool here
-                activeKeys.Remove(detectedNote);  // Remove the key from activeKeys dictionary
+                activeKeys.Remove(note);
             }
-        }
 
-        var notesToRemove = new List<string>();
-        foreach (var kvp in activeKeys)
-        {
-            if (kvp.Key != detectedNote || !_isPlaying)
+            if (display != null)
             {
-                var pianoKeyAnimation = kvp.Value.GetComponent<PianoKeyAnimation>();
-                pianoKeyAnimation.StopNote();
-                //pianoKeyPool.ReturnNoteToPool(kvp.Value);
-                notesToRemove.Add(kvp.Key);
+                display.text = "RMS: " + rmsValue.ToString("F2") +
+                               " (" + dbValue.ToString("F1") + " dB)\n" +
+                               "Pitch: " + pitchValue.ToString("F0") + " Hz\n" +
+                               "Detected Note: " + detectedNote;
+                Debug.Log("note: " + detectedNote);
             }
-        }
-
-        foreach (var note in notesToRemove)
-        {
-            activeKeys.Remove(note);
-        }
-
-        if (display != null)
-        {
-            display.text = "RMS: " + rmsValue.ToString("F2") +
-                           " (" + dbValue.ToString("F1") + " dB)\n" +
-                           "Pitch: " + pitchValue.ToString("F0") + " Hz\n" +
-                           "Detected Note: " + detectedNote;
-            Debug.Log("note: " + detectedNote);
         }
     }
 

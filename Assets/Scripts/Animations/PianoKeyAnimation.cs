@@ -16,8 +16,11 @@ public class PianoKeyAnimation : MonoBehaviour
 
     void Update()
     {
+        if (isPlaying)
+        {
+            transform.localScale = new Vector3(1, transform.localScale.y + growthRate * Time.deltaTime, 1);
+        }
         // Maintenant, la note montera toujours, que isPlaying soit true ou false
-        transform.localScale = new Vector3(1, transform.localScale.y + growthRate * Time.deltaTime, 1);
         transform.position += new Vector3(0, moveRate, 0) * Time.deltaTime;
 
         // Cependant, si shouldReturnToPool est true et la position y est >= 100, retournez l'objet à la pool
