@@ -66,12 +66,10 @@ public class AudioAnalyzer : MonoBehaviour
     private string _previousNote;
     private bool _isPlaying;
 
-    public GameObject _naturalNotes;
-    public GameObject _sharpNotesFlatNotes;
+    public PianoKeyPool pianoKeyPool;
+
     private Dictionary<string, GameObject> activeKeys = new Dictionary<string, GameObject>();
 
-
-    // Déclaration du délégué et de l'événement pour le changement de note
     public delegate void NoteChangedEventHandler(string newNote);
     public event NoteChangedEventHandler NoteChanged;
 
@@ -96,7 +94,8 @@ public class AudioAnalyzer : MonoBehaviour
 
     private void OnDestroy()
     {
-        NoteChanged -= HandleNoteChanged;    }
+        NoteChanged -= HandleNoteChanged;
+    }
 
     void Update()
     {
@@ -105,7 +104,6 @@ public class AudioAnalyzer : MonoBehaviour
 
     void AnalyzeSound()
     {
-        float[] samples = new float[qSamples];
         GetComponent<AudioSource>().GetOutputData(samples, 0);
         int i = 0;
         float sum = 0f;
@@ -165,27 +163,22 @@ public class AudioAnalyzer : MonoBehaviour
                 if (pitchValue >= minFrequency && pitchValue <= maxFrequency)
                 {
                     detectedNote = kvp.Key;
-
-                    // Vérification du changement de note et déclenchement de l'événement
-                    if (detectedNote != _previousNote)
-                    {
-                        _previousNote = detectedNote;
-                        NoteChanged?.Invoke(detectedNote);
-                    }
                     break;
                 }
             }
         }
-       
-
         peaks.Clear();
         if (detectedNote != "Unknown")
         {
             GameObject pianoKey;
-            if (!activeKeys.ContainsKey(detectedNote))
+            if (!activeKeys.ContainsKey(detectedNote) && detectedNote.Contains("#"))
             {
-                // Instancier un nouveau GameObject pour la touche de piano
-                pianoKey = Instantiate(_naturalNotes, new Vector3(0, 0, 0), Quaternion.identity);
+                pianoKey = pianoKeyPool.GetSharpNote();
+                activeKeys.Add(detectedNote, pianoKey);
+            }
+            else if (!activeKeys.ContainsKey(detectedNote))
+            {
+                pianoKey = pianoKeyPool.GetNaturalNote();
                 activeKeys.Add(detectedNote, pianoKey);
             }
             else
@@ -200,12 +193,11 @@ public class AudioAnalyzer : MonoBehaviour
             }
             else
             {
-                pianoKeyAnimation.StopNote();
-                activeKeys.Remove(detectedNote);
+                pianoKeyAnimation.StopNote();  // Just stop the note, don't return it to the pool here
+                activeKeys.Remove(detectedNote);  // Remove the key from activeKeys dictionary
             }
         }
 
-        // Arrêtez de jouer les notes qui ne sont plus détectées
         var notesToRemove = new List<string>();
         foreach (var kvp in activeKeys)
         {
@@ -213,6 +205,7 @@ public class AudioAnalyzer : MonoBehaviour
             {
                 var pianoKeyAnimation = kvp.Value.GetComponent<PianoKeyAnimation>();
                 pianoKeyAnimation.StopNote();
+                //pianoKeyPool.ReturnNoteToPool(kvp.Value);
                 notesToRemove.Add(kvp.Key);
             }
         }
@@ -229,14 +222,12 @@ public class AudioAnalyzer : MonoBehaviour
                            "Pitch: " + pitchValue.ToString("F0") + " Hz\n" +
                            "Detected Note: " + detectedNote;
             Debug.Log("note: " + detectedNote);
-
         }
     }
-    
-    
+
     private void HandleNoteChanged(string newNote)
     {
-       // Debug.Log("nouvelle note: " + newNote);
+        // Debug.Log("nouvelle note: " + newNote);
     }
     
     
