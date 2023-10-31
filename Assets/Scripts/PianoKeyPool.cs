@@ -17,52 +17,66 @@ public class PianoKeyPool : MonoBehaviour
         "C8"
     };
 
-    private List<GameObject> allPianoKeys = new List<GameObject>(88);
-    private List<GameObject> activePianoKeys = new List<GameObject>();
-    private Stack<GameObject> inactivePianoKeys = new Stack<GameObject>();
+    private List<GameObject> allPianoKeys = new List<GameObject>(300);  // Liste pour contenir toutes les notes
     private Vector3[] keyPositions = new Vector3[88];
-
+    private Dictionary<string, Stack<GameObject>> inactivePianoKeys = new Dictionary<string, Stack<GameObject>>();  // Utilisation d'une pile pour chaque note
 
     void Awake()
     {
-        float initialPosition = 0f;  // position de la première touche
-        float keySpacing = 1f;  // espace entre les touches
+        float initialPosition = 0f;
+        float keySpacing = 1f;
         for (int i = 0; i < 88; i++)
         {
             keyPositions[i] = new Vector3(initialPosition + i * keySpacing, 0, 0);
         }
-        // Vous pouvez instantier un certain nombre d'objets au début si vous le souhaitez
-        // et les ajouter à la pile inactivePianoKeys
+        for (int i = 0; i < noteNames.Length; i++)
+        {
+            for (int j = 0; j < 300 / noteNames.Length; j++)
+            {
+                GameObject notePrefab = noteNames[i].Contains("#") ? sharpNotePrefab : naturalNotePrefab;
+                GameObject note = Instantiate(notePrefab, pianoGameObject.transform);
+                note.SetActive(false);
+                allPianoKeys.Add(note);
+                if (!inactivePianoKeys.ContainsKey(noteNames[i]))
+                {
+                    inactivePianoKeys[noteNames[i]] = new Stack<GameObject>();
+                }
+                inactivePianoKeys[noteNames[i]].Push(note);
+            }
+        }
     }
 
     public GameObject GetNote(string noteName)
     {
-        int index = System.Array.IndexOf(noteNames, noteName);  // Trouver l'index de la note dans noteNames
+        int index = System.Array.IndexOf(noteNames, noteName);
         if (index >= 0 && index < 88)
         {
-            GameObject note;
+            // Retirez simplement n'importe quel objet inactif de la pile,
+            // sans vous soucier de la note qu'il représentait précédemment
             if (inactivePianoKeys.Count > 0)
             {
-                // Réutiliser un objet inactif
-                note = inactivePianoKeys.Pop();
+                GameObject note = inactivePianoKeys.Pop();
                 note.transform.position = keyPositions[index];
                 note.SetActive(true);
+
+                // Configurez l'objet pour représenter la note spécifiée
+                var pianoKeyAnimation = note.GetComponent<PianoKeyAnimation>();
+                pianoKeyAnimation.SetNote(noteName, keyPositions[index]);
+
+                return note;
             }
-            else
-            {
-                // Instantier un nouvel objet si aucun objet inactif n'est disponible
-                GameObject notePrefab = noteNames[index].Contains("#") ? sharpNotePrefab : naturalNotePrefab;
-                note = Instantiate(notePrefab, keyPositions[index], Quaternion.identity, pianoGameObject.transform);
-            }
-            return note;
         }
         return null;
     }
 
-    public void ReturnNoteToPool(GameObject note)
+    public void ReturnNoteToPool(string noteName, GameObject note)
     {
         note.SetActive(false);
-        inactivePianoKeys.Push(note);
+        if (!inactivePianoKeys.ContainsKey(noteName))
+        {
+            inactivePianoKeys[noteName] = new Stack<GameObject>();
+        }
+        inactivePianoKeys[noteName].Push(note);
     }
     
     

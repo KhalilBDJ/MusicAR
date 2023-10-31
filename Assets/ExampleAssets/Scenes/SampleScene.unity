@@ -938,6 +938,37 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   windowType: 0
   test: {fileID: 8300000, guid: c665befd14d817d4f8f7a02afaf5644b, type: 3}
+--- !u!1 &920840775
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 920840776}
+  m_Layer: 0
+  m_Name: Piano
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &920840776
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 920840775}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 8
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1473164081
 GameObject:
   m_ObjectHideFlags: 0
@@ -948,6 +979,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1473164082}
   - component: {fileID: 1473164083}
+  - component: {fileID: 1473164084}
   m_Layer: 0
   m_Name: Scripts
   m_TagString: Untagged
@@ -986,7 +1018,20 @@ MonoBehaviour:
     type: 3}
   sharpNotePrefab: {fileID: 1559006345670711082, guid: 79ca0178643911c46a5b589bea30a614,
     type: 3}
-  initialPoolSize: 100
+  pianoGameObject: {fileID: 920840775}
+--- !u!114 &1473164084
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1473164081}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2b802f38fccb2a543b0b6c1676052a19, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  pianoKeys: []
 --- !u!1 &1911534628
 GameObject:
   m_ObjectHideFlags: 0

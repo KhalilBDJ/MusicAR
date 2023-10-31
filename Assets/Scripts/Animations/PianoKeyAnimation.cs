@@ -4,6 +4,7 @@ public class PianoKeyAnimation : MonoBehaviour
 {
     public float growthRate = 1f;
     public float moveRate = 1f;
+    public string noteName;  // Ajouté pour stocker le nom de la note
 
     private bool isPlaying;
     private PianoKeyPool pianoKeyPool;
@@ -27,12 +28,19 @@ public class PianoKeyAnimation : MonoBehaviour
         if (shouldReturnToPool && transform.position.y >= 100)
         {
             shouldReturnToPool = false;  // Réinitialiser le flag
-            pianoKeyPool.ReturnNoteToPool(gameObject);
+            pianoKeyPool.ReturnNoteToPool(noteName, gameObject);  // Modifié pour passer le nom de la note
         }
     }
-
-    public void PlayNote()
+    
+    public void SetNote(string noteName, Vector3 position)  // Nouvelle méthode pour définir la note
     {
+        // Vous pouvez définir des propriétés supplémentaires ici en fonction du noteName si nécessaire
+        transform.position = position;  // Définir la position initiale de l'objet
+    }
+
+    public void PlayNote(string newNoteName)  // Modifié pour accepter le nom de la note
+    {
+        noteName = newNoteName;  // Stockez le nom de la note pour une utilisation ultérieure
         isPlaying = true;
         shouldReturnToPool = false;  // Réinitialiser le flag lorsqu'une note commence à jouer
     }
