@@ -7,9 +7,10 @@ public class PianoKeyPool : MonoBehaviour
 {
     public GameObject naturalNotePrefab;
     public GameObject sharpNotePrefab;
-    public GameObject pianoGameObject;  // L'objet vide qui représente le piano
+    public GameObject pianoGameObject; 
     public int initialPoolSize = 200;
-    public float keyWidth;  // The width of each key
+    public float keyWidth;  
+    
 
 
     private string[] noteNames = {
@@ -31,6 +32,7 @@ public class PianoKeyPool : MonoBehaviour
 
     private void Awake()
     {
+        keyWidth = pianoGameObject.GetComponent<RectTransform>().rect.width / 88;
         _noteNames = new List<string>(noteNames);
         InitializePool(_sharpNotesPool, sharpNotePrefab, initialPoolSize);
         InitializePool(_naturalNotesPool, naturalNotePrefab, initialPoolSize);
@@ -60,8 +62,7 @@ public class PianoKeyPool : MonoBehaviour
     
     private int GetKeyIndex(string noteName)
     {
-        // Assume noteFrequencies is a Dictionary where the keys are note names like "C4", "D4#", etc.
-        int index = _noteNames.IndexOf(noteName) - 1;  // Adjust this line to map note names to indices correctly
+        int index = _noteNames.IndexOf(noteName) - 1; 
         return index;
     }
 
@@ -73,13 +74,16 @@ public class PianoKeyPool : MonoBehaviour
             if (noteName.Contains("#"))
             {
                 noteObject = GetObjectFromPool(_sharpNotesPool, sharpNotePrefab);
+                noteObject.transform.localScale = new Vector3(keyWidth, 1, 1);
             }
             else
             {
                 noteObject = GetObjectFromPool(_naturalNotesPool, naturalNotePrefab);
+                noteObject.transform.localScale = new Vector3(keyWidth, 1, 1);
+
             }
             int keyIndex = GetKeyIndex(noteName);
-            noteObject.transform.position = keyPositions[keyIndex];
+            noteObject.transform.localPosition = keyPositions[keyIndex];
             noteObject.SetActive(true);
             return noteObject;
         }
