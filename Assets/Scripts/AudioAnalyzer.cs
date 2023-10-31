@@ -120,6 +120,15 @@ private float GetFrequency()
             var dL = spectrum[maxN - 1] / spectrum[maxN];
             var dR = spectrum[maxN + 1] / spectrum[maxN];
             freqN += 0.5f * (dR * dR - dL * dL);
+            if (freqN == 0)
+            {
+                _isPlaying = false;
+                NoteChanged?.Invoke("");
+            }
+            else
+            {
+                _isPlaying = true;
+            }
         }
 
         peaks.Clear();
@@ -150,23 +159,16 @@ private void HandleDisplay(float rmsValue, float dbValue, float frequency, strin
 {
     if (detectedNote != "Unknown")
     {
-        GameObject pianoKey = pianoKeyPool.GetNote(detectedNote);
-        if (pianoKey != null)
-        {
-            var pianoKeyAnimation = pianoKey.GetComponent<PianoKeyAnimation>();
             if (_isPlaying)
             {
                 if (!activeKeys.ContainsKey(detectedNote))
                 {
+                    GameObject pianoKey = pianoKeyPool.GetNoteObject(detectedNote);
+                    var pianoKeyAnimation = pianoKey.GetComponent<PianoKeyAnimation>();
                     pianoKeyAnimation.PlayNote(detectedNote);
                     activeKeys.Add(detectedNote, pianoKey);
                 }
             }
-            else
-            {
-                pianoKeyAnimation.StopNote();
-            }
-        }
 
         var notesToRemove = new List<string>();
         foreach (var kvp in activeKeys)

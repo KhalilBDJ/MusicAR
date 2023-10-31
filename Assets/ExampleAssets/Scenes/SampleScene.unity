@@ -1019,6 +1019,8 @@ MonoBehaviour:
   sharpNotePrefab: {fileID: 1559006345670711082, guid: 79ca0178643911c46a5b589bea30a614,
     type: 3}
   pianoGameObject: {fileID: 920840775}
+  initialPoolSize: 200
+  keyWidth: 1
 --- !u!114 &1473164084
 MonoBehaviour:
   m_ObjectHideFlags: 0
