@@ -19,6 +19,7 @@ public class PianoKeyAnimation : MonoBehaviour
     {
         if (isPlaying)
         {
+            transform.position += new Vector3(0, moveRate/2, 0) * Time.deltaTime;
             transform.localScale = new Vector3(1, transform.localScale.y + growthRate * Time.deltaTime, 1);
         }
         else
@@ -29,17 +30,11 @@ public class PianoKeyAnimation : MonoBehaviour
         
 
         // Cependant, si shouldReturnToPool est true et la position y est >= 100, retournez l'objet à la pool
-        if (shouldReturnToPool && transform.position.y >= 100)
+        if (shouldReturnToPool && transform.position.y >= 10)
         {
             shouldReturnToPool = false;  // Réinitialiser le flag
             pianoKeyPool.ReturnNoteObject(gameObject, noteName);  // Modifié pour passer le nom de la note
         }
-    }
-    
-    public void SetNote(string noteName, Vector3 position)  // Nouvelle méthode pour définir la note
-    {
-        // Vous pouvez définir des propriétés supplémentaires ici en fonction du noteName si nécessaire
-        transform.position = position;  // Définir la position initiale de l'objet
     }
 
     public void PlayNote(string newNoteName)  // Modifié pour accepter le nom de la note

@@ -42,10 +42,12 @@ public class PianoKeyPool : MonoBehaviour
         for (int i = 0; i < size; i++)
         {
             GameObject noteObject = Instantiate(prefab);
+            noteObject.transform.SetParent(pianoGameObject.transform);  // Set PianoGameObject as the parent
             noteObject.SetActive(false);
             pool.Enqueue(noteObject);
         }
     }
+
     
     private void InitializeKeyPositions()
     {
@@ -94,9 +96,12 @@ public class PianoKeyPool : MonoBehaviour
         }
         else
         {
-            return Instantiate(prefab);
+            GameObject noteObject = Instantiate(prefab);
+            noteObject.transform.SetParent(pianoGameObject.transform);  // Set PianoGameObject as the parent
+            return noteObject;
         }
     }
+
 
     public void ReturnNoteObject(GameObject noteObject, string noteName)
     {
@@ -104,17 +109,15 @@ public class PianoKeyPool : MonoBehaviour
 
         if (!noteName.IsNullOrEmpty())
         {
-             if (noteName.Contains("#"))
-        {
-            _sharpNotesPool.Enqueue(noteObject);
+            if (noteName.Contains("#"))
+            {
+                _sharpNotesPool.Enqueue(noteObject);
+            }
+            else
+            {
+                _naturalNotesPool.Enqueue(noteObject);
+            }
         }
-        else
-        {
-            _naturalNotesPool.Enqueue(noteObject);
-        }
-        }
-       
+
     }
-    
-    
 }

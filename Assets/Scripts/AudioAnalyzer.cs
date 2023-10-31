@@ -164,7 +164,7 @@ private void HandleDisplay(float rmsValue, float dbValue, float frequency, strin
                 if (!activeKeys.ContainsKey(detectedNote))
                 {
                     GameObject pianoKey = pianoKeyPool.GetNoteObject(detectedNote);
-                    var pianoKeyAnimation = pianoKey.GetComponent<PianoKeyAnimation>();
+                    var pianoKeyAnimation = pianoKey.GetComponentInChildren<PianoKeyAnimation>();
                     pianoKeyAnimation.PlayNote(detectedNote);
                     activeKeys.Add(detectedNote, pianoKey);
                 }
@@ -175,7 +175,7 @@ private void HandleDisplay(float rmsValue, float dbValue, float frequency, strin
         {
             if (kvp.Key != detectedNote || !_isPlaying)
             {
-                var pianoKeyAnimation = kvp.Value.GetComponent<PianoKeyAnimation>();
+                var pianoKeyAnimation = kvp.Value.GetComponentInChildren<PianoKeyAnimation>();
                 pianoKeyAnimation.StopNote();
                 notesToRemove.Add(kvp.Key);
             }
