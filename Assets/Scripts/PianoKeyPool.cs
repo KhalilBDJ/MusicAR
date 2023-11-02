@@ -107,7 +107,7 @@ public class PianoKeyPool : MonoBehaviour
 
             }
             int keyIndex = GetKeyIndex(noteName);
-            noteObject.transform.localPosition = new Vector3(notePositions[noteName],noteObject.transform.localPosition.y, noteObject.transform.localPosition.z );
+            noteObject.transform.localPosition = new Vector3(notePositions[noteName],noteObject.transform.localPosition.y + pianoGameObject.GetComponent<RectTransform>().rect.height, noteObject.transform.localPosition.z );
             noteObject.SetActive(true);
             return noteObject;
         }

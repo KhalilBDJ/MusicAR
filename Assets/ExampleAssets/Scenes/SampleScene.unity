@@ -1110,7 +1110,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1473164082}
   - component: {fileID: 1473164083}
-  - component: {fileID: 1473164084}
   m_Layer: 0
   m_Name: Scripts
   m_TagString: Untagged
@@ -1151,19 +1150,6 @@ MonoBehaviour:
     type: 3}
   pianoGameObject: {fileID: 1195140199}
   initialPoolSize: 200
---- !u!114 &1473164084
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1473164081}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2b802f38fccb2a543b0b6c1676052a19, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pianoKeys: []
 --- !u!1 &1911534628
 GameObject:
   m_ObjectHideFlags: 0

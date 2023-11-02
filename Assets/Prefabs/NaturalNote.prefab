@@ -113,3 +113,4 @@ MonoBehaviour:
   growthRate: 1
   moveRate: 1
   noteName: 
+  piano: {fileID: 6119161535705803028, guid: 7abe8929ea61a7f4fbec8de0b16ab8e9, type: 3}
