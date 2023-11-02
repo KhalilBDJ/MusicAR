@@ -19,13 +19,13 @@ public class PianoKeyAnimation : MonoBehaviour
     {
         if (isPlaying)
         {
-            transform.localPosition += new Vector3(0, moveRate/2, 0) * Time.deltaTime;
+            transform.position += new Vector3(0, moveRate/2, 0) * Time.deltaTime;
             transform.localScale = new Vector3(transform.localScale.x, transform.localScale.y + growthRate * Time.deltaTime, transform.localScale.z);
         }
         else
         {
             // Maintenant, la note montera toujours, que isPlaying soit true ou false
-            transform.localPosition += new Vector3(0, moveRate, 0) * Time.deltaTime;
+            transform.position += new Vector3(0, moveRate, 0) * Time.deltaTime;
         }
         
 

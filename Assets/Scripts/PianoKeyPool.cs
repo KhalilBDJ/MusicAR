@@ -9,11 +9,16 @@ public class PianoKeyPool : MonoBehaviour
     public GameObject sharpNotePrefab;
     public GameObject pianoGameObject; 
     public int initialPoolSize = 200;
-    public float keyWidth;  
+    private float whiteKeyWidth;
+    private float blackKeyWidth;
+    
+    private Dictionary<string, float> notePositions = new Dictionary<string, float>();
+    private float currentXPosition;
     
 
 
     private string[] noteNames = {
+        "A0", "A#0", "B0",
         "C1", "C#1", "D1", "D#1", "E1", "F1", "F#1", "G1", "G#1", "A1", "A#1", "B1",
         "C2", "C#2", "D2", "D#2", "E2", "F2", "F#2", "G2", "G#2", "A2", "A#2", "B2",
         "C3", "C#3", "D3", "D#3", "E3", "F3", "F#3", "G3", "G#3", "A3", "A#3", "B3",
@@ -24,6 +29,7 @@ public class PianoKeyPool : MonoBehaviour
         "C8"
     };
 
+
     private List<String> _noteNames = new List<string>();
     
     private Vector3[] keyPositions = new Vector3[88];
@@ -32,11 +38,14 @@ public class PianoKeyPool : MonoBehaviour
 
     private void Awake()
     {
-        keyWidth = pianoGameObject.GetComponent<RectTransform>().rect.width / 88;
+        Debug.Log(noteNames.Length);
+        whiteKeyWidth = pianoGameObject.GetComponent<RectTransform>().rect.width / 52;
+        blackKeyWidth = whiteKeyWidth / 2;
+        currentXPosition = blackKeyWidth;
         _noteNames = new List<string>(noteNames);
         InitializePool(_sharpNotesPool, sharpNotePrefab, initialPoolSize);
         InitializePool(_naturalNotesPool, naturalNotePrefab, initialPoolSize);
-        InitializeKeyPositions();
+        InitializeNotePositions();
     }
     
     private void InitializePool(Queue<GameObject> pool, GameObject prefab, int size)
@@ -49,16 +58,31 @@ public class PianoKeyPool : MonoBehaviour
             pool.Enqueue(noteObject);
         }
     }
-
-    
-    private void InitializeKeyPositions()
+    void InitializeNotePositions()
     {
-        for (int i = 0; i < 88; i++)
+        bool isPrevKeyWhite = true; // Pour s'assurer qu'on ne place pas deux touches noires successives trop près
+
+        foreach (string note in noteNames)
         {
-            float xPosition = pianoGameObject.transform.position.x + (i * keyWidth);
-            keyPositions[i] = new Vector3(xPosition, pianoGameObject.transform.position.y, pianoGameObject.transform.position.z);
+            // Déterminez si la note actuelle est une touche blanche ou noire
+            bool isWhiteKey = !note.Contains("#");
+
+            if (isWhiteKey)
+            {
+                notePositions[note] = currentXPosition;
+                currentXPosition += whiteKeyWidth;
+                isPrevKeyWhite = true;
+            }
+            else
+            {
+                // Si la touche précédente était blanche, placez la touche noire à une demi-largeur de la touche blanche précédente
+                float offset = isPrevKeyWhite ? -blackKeyWidth : 0;
+                notePositions[note] = currentXPosition + offset;
+                isPrevKeyWhite = false;
+            }
         }
     }
+    
     
     private int GetKeyIndex(string noteName)
     {
@@ -74,16 +98,16 @@ public class PianoKeyPool : MonoBehaviour
             if (noteName.Contains("#"))
             {
                 noteObject = GetObjectFromPool(_sharpNotesPool, sharpNotePrefab);
-                noteObject.transform.localScale = new Vector3(keyWidth, 1, 1);
+                noteObject.transform.localScale = new Vector3(blackKeyWidth, 1, -2);
             }
             else
             {
                 noteObject = GetObjectFromPool(_naturalNotesPool, naturalNotePrefab);
-                noteObject.transform.localScale = new Vector3(keyWidth, 1, 1);
+                noteObject.transform.localScale = new Vector3(whiteKeyWidth, 1, 1);
 
             }
             int keyIndex = GetKeyIndex(noteName);
-            noteObject.transform.localPosition = keyPositions[keyIndex];
+            noteObject.transform.localPosition = new Vector3(notePositions[noteName],noteObject.transform.localPosition.y, noteObject.transform.localPosition.z );
             noteObject.SetActive(true);
             return noteObject;
         }
