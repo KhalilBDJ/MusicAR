@@ -39,7 +39,8 @@ public class PianoKeyPool : MonoBehaviour
     private void Awake()
     {
         Debug.Log(noteNames.Length);
-        whiteKeyWidth = pianoGameObject.GetComponent<RectTransform>().rect.width / 52;
+        Debug.Log(pianoGameObject.GetComponent<MeshRenderer>().bounds.size.x);
+        whiteKeyWidth = pianoGameObject.GetComponent<MeshRenderer>().bounds.size.x / 520;
         blackKeyWidth = whiteKeyWidth / 2;
         currentXPosition = blackKeyWidth;
         _noteNames = new List<string>(noteNames);
@@ -98,7 +99,7 @@ public class PianoKeyPool : MonoBehaviour
             if (noteName.Contains("#"))
             {
                 noteObject = GetObjectFromPool(_sharpNotesPool, sharpNotePrefab);
-                noteObject.transform.localScale = new Vector3(blackKeyWidth, 1, -2);
+                noteObject.transform.localScale = new Vector3(blackKeyWidth, 1, 1);
             }
             else
             {
@@ -107,7 +108,7 @@ public class PianoKeyPool : MonoBehaviour
 
             }
             int keyIndex = GetKeyIndex(noteName);
-            noteObject.transform.localPosition = new Vector3(notePositions[noteName],noteObject.transform.localPosition.y + pianoGameObject.GetComponent<RectTransform>().rect.height, noteObject.transform.localPosition.z );
+            noteObject.transform.position = new Vector3(notePositions[noteName] ,noteObject.transform.localPosition.y, noteObject.transform.localPosition.z -10 );
             noteObject.SetActive(true);
             return noteObject;
         }
