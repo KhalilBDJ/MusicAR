@@ -40,13 +40,17 @@ public class PianoKeyPool : MonoBehaviour
     {
         Debug.Log(noteNames.Length);
         Debug.Log(pianoGameObject.GetComponent<MeshRenderer>().bounds.size.x);
-        whiteKeyWidth = pianoGameObject.GetComponent<MeshRenderer>().bounds.size.x / 520;
+        whiteKeyWidth = pianoGameObject.GetComponent<Transform>().localScale.x / 52;
         blackKeyWidth = whiteKeyWidth / 2;
-        currentXPosition = blackKeyWidth;
+        currentXPosition = pianoGameObject.GetComponent<Transform>().localScale.x  / 2;
         _noteNames = new List<string>(noteNames);
         InitializePool(_sharpNotesPool, sharpNotePrefab, initialPoolSize);
         InitializePool(_naturalNotesPool, naturalNotePrefab, initialPoolSize);
         InitializeNotePositions();
+        foreach (var note in noteNames)
+        {
+            GetNoteObject(note);
+        }
     }
     
     private void InitializePool(Queue<GameObject> pool, GameObject prefab, int size)
@@ -71,14 +75,14 @@ public class PianoKeyPool : MonoBehaviour
             if (isWhiteKey)
             {
                 notePositions[note] = currentXPosition;
-                currentXPosition += whiteKeyWidth;
+                currentXPosition -= whiteKeyWidth;
                 isPrevKeyWhite = true;
             }
             else
             {
                 // Si la touche précédente était blanche, placez la touche noire à une demi-largeur de la touche blanche précédente
                 float offset = isPrevKeyWhite ? -blackKeyWidth : 0;
-                notePositions[note] = currentXPosition + offset;
+                notePositions[note] = (currentXPosition - offset);
                 isPrevKeyWhite = false;
             }
         }
@@ -100,15 +104,18 @@ public class PianoKeyPool : MonoBehaviour
             {
                 noteObject = GetObjectFromPool(_sharpNotesPool, sharpNotePrefab);
                 noteObject.transform.localScale = new Vector3(blackKeyWidth, 1, 1);
+                noteObject.transform.localPosition = new Vector3(notePositions[noteName] ,0, 0 );
+                noteObject.name = noteName;
+
             }
             else
             {
                 noteObject = GetObjectFromPool(_naturalNotesPool, naturalNotePrefab);
                 noteObject.transform.localScale = new Vector3(whiteKeyWidth, 1, 1);
-
+                noteObject.transform.localPosition = new Vector3(notePositions[noteName] ,-1, 0 );
+                noteObject.name = noteName;
             }
             int keyIndex = GetKeyIndex(noteName);
-            noteObject.transform.position = new Vector3(notePositions[noteName] ,noteObject.transform.localPosition.y, noteObject.transform.localPosition.z -10 );
             noteObject.SetActive(true);
             return noteObject;
         }
