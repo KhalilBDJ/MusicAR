@@ -143,8 +143,8 @@ private string GetDetectedNote(float frequency)
     string detectedNote = "Unknown";
     foreach (var kvp in noteFrequencies)
     {
-        float minFrequency = kvp.Value - 5.0f;
-        float maxFrequency = kvp.Value + 5.0f;
+        float minFrequency = kvp.Value - 1.0f;
+        float maxFrequency = kvp.Value + 1.0f;
 
         if (frequency >= minFrequency && frequency <= maxFrequency)
         {
@@ -243,7 +243,7 @@ private void HandleDisplay(float rmsValue, float dbValue, float frequency, strin
         {"A3", 220.00f},
         {"A#3", 233.08f},
         {"B3", 246.94f},
-        {"C4", 261.63f}, // Middle C
+        {"C4", 261.63f}, 
         {"C#4", 277.18f},
         {"D4", 293.66f},
         {"D#4", 311.13f},
@@ -291,7 +291,7 @@ private void HandleDisplay(float rmsValue, float dbValue, float frequency, strin
         {"A7", 3520.00f},
         {"A#7", 3729.31f},
         {"B7", 3951.07f},
-        {"C8", 4186.01f} // Highest C
+        {"C8", 4186.01f}
     };
 
 }
