@@ -1000,6 +1000,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4143448302905016287, guid: 7abe8929ea61a7f4fbec8de0b16ab8e9,
+        type: 3}
+      propertyPath: m_LocalScale.x
+      value: 10
+      objectReference: {fileID: 0}
     - target: {fileID: 4926396969813592117, guid: 7abe8929ea61a7f4fbec8de0b16ab8e9,
         type: 3}
       propertyPath: m_Pivot.x

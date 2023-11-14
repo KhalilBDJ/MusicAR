@@ -5,19 +5,23 @@ using Unity.Tutorials.Core.Editor;
 
 public class PianoKeyPool : MonoBehaviour
 {
+    
+    //PUBLIC GO
     public GameObject naturalNotePrefab;
     public GameObject sharpNotePrefab;
     public GameObject pianoGameObject; 
+    
+    
+    //PUBLIC INT
     public int initialPoolSize = 200;
-    private float whiteKeyWidth;
-    private float blackKeyWidth;
     
-    private Dictionary<string, float> notePositions = new Dictionary<string, float>();
-    private float currentXPosition;
-    
+    //PRIVATE FLOAT
+    private float _whiteKeyWidth;
+    private float _blackKeyWidth;
+    private float _currentXPosition;
 
-
-    private string[] noteNames = {
+    private readonly Dictionary<string, float> _notePositions = new Dictionary<string, float>();
+    private readonly string[] _names = {
         "A0", "A#0", "B0",
         "C1", "C#1", "D1", "D#1", "E1", "F1", "F#1", "G1", "G#1", "A1", "A#1", "B1",
         "C2", "C#2", "D2", "D#2", "E2", "F2", "F#2", "G2", "G#2", "A2", "A#2", "B2",
@@ -31,23 +35,22 @@ public class PianoKeyPool : MonoBehaviour
 
 
     private List<String> _noteNames = new List<string>();
-    
-    private Vector3[] keyPositions = new Vector3[88];
+
     private Queue<GameObject> _sharpNotesPool = new Queue<GameObject>();
     private Queue<GameObject> _naturalNotesPool = new Queue<GameObject>();
 
     private void Awake()
     {
-        Debug.Log(noteNames.Length);
+        Debug.Log(_names.Length);
         Debug.Log(pianoGameObject.GetComponent<MeshRenderer>().bounds.size.x);
-        whiteKeyWidth = pianoGameObject.GetComponent<Transform>().localScale.x / 52;
-        blackKeyWidth = whiteKeyWidth / 2;
-        currentXPosition = pianoGameObject.GetComponent<Transform>().localScale.x  / 2;
-        _noteNames = new List<string>(noteNames);
+        _whiteKeyWidth = pianoGameObject.GetComponent<Transform>().localScale.x / 52;
+        _blackKeyWidth = _whiteKeyWidth / 2;
+        _currentXPosition = pianoGameObject.GetComponent<Transform>().localScale.x  / 2 - _blackKeyWidth;
+        _noteNames = new List<string>(_names);
         InitializePool(_sharpNotesPool, sharpNotePrefab, initialPoolSize);
         InitializePool(_naturalNotesPool, naturalNotePrefab, initialPoolSize);
         InitializeNotePositions();
-        foreach (var note in noteNames)
+        foreach (var note in _names)
         {
             GetNoteObject(note);
         }
@@ -57,8 +60,7 @@ public class PianoKeyPool : MonoBehaviour
     {
         for (int i = 0; i < size; i++)
         {
-            GameObject noteObject = Instantiate(prefab);
-            noteObject.transform.SetParent(pianoGameObject.transform);  // Set PianoGameObject as the parent
+            GameObject noteObject = Instantiate(prefab, pianoGameObject.transform, true);
             noteObject.SetActive(false);
             pool.Enqueue(noteObject);
         }
@@ -67,34 +69,27 @@ public class PianoKeyPool : MonoBehaviour
     {
         bool isPrevKeyWhite = true; // Pour s'assurer qu'on ne place pas deux touches noires successives trop près
 
-        foreach (string note in noteNames)
+        foreach (string note in _names)
         {
             // Déterminez si la note actuelle est une touche blanche ou noire
             bool isWhiteKey = !note.Contains("#");
 
             if (isWhiteKey)
             {
-                notePositions[note] = currentXPosition;
-                currentXPosition -= whiteKeyWidth;
+                _notePositions[note] = _currentXPosition;
+                _currentXPosition -= _whiteKeyWidth;
                 isPrevKeyWhite = true;
             }
             else
             {
-                // Si la touche précédente était blanche, placez la touche noire à une demi-largeur de la touche blanche précédente
-                float offset = isPrevKeyWhite ? -blackKeyWidth : 0;
-                notePositions[note] = (currentXPosition - offset);
+                // Si la touche précédente était blanche, on place la touche noire à une demi-largeur de la touche blanche précédente
+                float offset = isPrevKeyWhite ? -_blackKeyWidth : 0;
+                _notePositions[note] = (_currentXPosition - offset);
                 isPrevKeyWhite = false;
             }
         }
     }
     
-    
-    private int GetKeyIndex(string noteName)
-    {
-        int index = _noteNames.IndexOf(noteName) - 1; 
-        return index;
-    }
-
     public GameObject GetNoteObject(string noteName)
     {
         GameObject noteObject;
@@ -103,19 +98,17 @@ public class PianoKeyPool : MonoBehaviour
             if (noteName.Contains("#"))
             {
                 noteObject = GetObjectFromPool(_sharpNotesPool, sharpNotePrefab);
-                noteObject.transform.localScale = new Vector3(blackKeyWidth, 1, 1);
-                noteObject.transform.localPosition = new Vector3(notePositions[noteName] ,0, 0 );
-                noteObject.name = noteName;
+                noteObject.transform.localScale = new Vector3(_blackKeyWidth, 1, 1);
+                noteObject.transform.localPosition = new Vector3(_notePositions[noteName] ,0, 0 );
 
             }
             else
             {
-                noteObject = GetObjectFromPool(_naturalNotesPool, naturalNotePrefab);
-                noteObject.transform.localScale = new Vector3(whiteKeyWidth, 1, 1);
-                noteObject.transform.localPosition = new Vector3(notePositions[noteName] ,-1, 0 );
-                noteObject.name = noteName;
+                noteObject = GetObjectFromPool(_naturalNotesPool, sharpNotePrefab);
+                noteObject.transform.localScale = new Vector3(_whiteKeyWidth, 1, 1);
+                noteObject.transform.localPosition = new Vector3(_notePositions[noteName] ,-1, 0 );
             }
-            int keyIndex = GetKeyIndex(noteName);
+            noteObject.name = noteName;
             noteObject.SetActive(true);
             return noteObject;
         }
@@ -132,8 +125,7 @@ public class PianoKeyPool : MonoBehaviour
         }
         else
         {
-            GameObject noteObject = Instantiate(prefab);
-            noteObject.transform.SetParent(pianoGameObject.transform);  // Set PianoGameObject as the parent
+            GameObject noteObject = Instantiate(prefab, pianoGameObject.transform, true);
             return noteObject;
         }
     }
