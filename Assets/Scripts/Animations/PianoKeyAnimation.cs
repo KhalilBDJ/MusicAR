@@ -24,16 +24,14 @@ public class PianoKeyAnimation : MonoBehaviour
         }
         else
         {
-            // Maintenant, la note montera toujours, que isPlaying soit true ou false
             transform.position += new Vector3(0, moveRate, 0) * Time.deltaTime;
         }
         
 
-        // Cependant, si shouldReturnToPool est true et la position y est >= 100, retournez l'objet à la pool
         if (shouldReturnToPool && transform.position.y >= (10 + transform.position.y))
         {
             shouldReturnToPool = false;  // Réinitialiser le flag
-            pianoKeyPool.ReturnNoteObject(gameObject, noteName);  // Modifié pour passer le nom de la note
+            pianoKeyPool.ReturnNoteObject(gameObject, noteName);  
         }
     }
 
