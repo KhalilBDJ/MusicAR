@@ -73,9 +73,14 @@ public class AudioAnalyzer : MonoBehaviour
    private void AnalyzeSound()
 {
     GetRMSAndDBValues(out float rmsValue, out float dbValue);
-    float freqN = GetFrequency();
-    string detectedNote = GetDetectedNote(freqN);
-    HandleDisplay(rmsValue, dbValue, freqN, detectedNote);
+    float freqN;
+    foreach (var frequency in GetFrequencies())
+    {
+        freqN = frequency;
+        string detectedNote = GetDetectedNote(freqN);
+        HandleDisplay(rmsValue, dbValue, freqN, detectedNote);
+    }
+    
 }
 
 private void GetRMSAndDBValues(out float rmsValue, out float dbValue)
@@ -92,51 +97,62 @@ private void GetRMSAndDBValues(out float rmsValue, out float dbValue)
     if (dbValue < -160) dbValue = -160;
 }
 
-private float GetFrequency()
+private List<float> GetFrequencies()
 {
     GetComponent<AudioSource>().GetSpectrumData(spectrum, 0, FFTWindow.BlackmanHarris);
-    float maxV = 0f;
+    var peaks = new List<Peak>();
+
     for (int i = 0; i < binSize; i++)
     {
-        if (spectrum[i] > maxV && spectrum[i] > threshold)
+        if (spectrum[i] > threshold)
         {
             peaks.Add(new Peak(spectrum[i], i));
-            if (peaks.Count > 5)
-            {
-                peaks.Sort(new AmpComparer());
-            }
         }
     }
 
-    float freqN = 0f;
-    if (peaks.Count > 0)
+    peaks.Sort((p1, p2) => p2.amplitude.CompareTo(p1.amplitude));
+
+    var frequencies = new List<float>();
+    foreach (var peak in peaks)
     {
-        maxV = peaks[0].amplitude;
-        int maxN = peaks[0].index;
-        freqN = maxN;
-
-        if (maxN > 0 && maxN < binSize - 1)
+        float freqN = peak.index;
+        if (freqN > 0 && freqN < binSize - 1)
         {
-            var dL = spectrum[maxN - 1] / spectrum[maxN];
-            var dR = spectrum[maxN + 1] / spectrum[maxN];
+            var dL = spectrum[peak.index - 1] / spectrum[peak.index];
+            var dR = spectrum[peak.index + 1] / spectrum[peak.index];
             freqN += 0.5f * (dR * dR - dL * dL);
-            if (freqN == 0)
-            {
-                _isPlaying = false;
-                NoteChanged?.Invoke("");
-            }
-            else
-            {
-                _isPlaying = true;
-            }
         }
 
-        peaks.Clear();
+        float pitchValue = freqN * (samplerate / 2f) / binSize;
+
+        // Vérifie si la fréquence est suffisamment unique
+        if (!IsFrequencySimilar(frequencies, pitchValue))
+        {
+            frequencies.Add(pitchValue);
+        }
     }
 
-    float pitchValue = freqN * (samplerate / 2f) / binSize;
-    return pitchValue;
+    _isPlaying = frequencies.Count > 0;
+    if (!_isPlaying)
+    {
+        NoteChanged?.Invoke("");
+    }
+
+    return frequencies;
 }
+
+private bool IsFrequencySimilar(List<float> frequencies, float newFrequency, float tolerance = 3.0f)
+{
+    foreach (var frequency in frequencies)
+    {
+        if (Mathf.Abs(frequency - newFrequency) < tolerance)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 
 private string GetDetectedNote(float frequency)
 {
