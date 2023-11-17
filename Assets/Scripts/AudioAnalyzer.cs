@@ -38,7 +38,7 @@ public class AudioAnalyzer : MonoBehaviour
 
     private Dictionary<string, GameObject> activeKeys = new Dictionary<string, GameObject>();
 
-    public delegate void NoteChangedEventHandler(string newNote);
+    public delegate void NoteChangedEventHandler(List<String> newNotes);
     public event NoteChangedEventHandler NoteChanged;
 
     void Start()
@@ -72,15 +72,18 @@ public class AudioAnalyzer : MonoBehaviour
 
    private void AnalyzeSound()
 {
-    GetRMSAndDBValues(out float rmsValue, out float dbValue);
-    float freqN;
+    /*GetRMSAndDBValues(out float rmsValue, out float dbValue);
+    List<float> detectedFrequencies = new List<float>();
+    List<string> detectedNotes = new List<string>();
+
     foreach (var frequency in GetFrequencies())
     {
-        freqN = frequency;
-        string detectedNote = GetDetectedNote(freqN);
-        HandleDisplay(rmsValue, dbValue, freqN, detectedNote);
+        detectedFrequencies.Add(frequency);
+        detectedNotes.Add(GetDetectedNote(frequency));
     }
-    
+    HandleDisplay( detectedNotes);*/
+    GetFrequencies();
+
 }
 
 private void GetRMSAndDBValues(out float rmsValue, out float dbValue)
@@ -113,6 +116,7 @@ private List<float> GetFrequencies()
     peaks.Sort((p1, p2) => p2.amplitude.CompareTo(p1.amplitude));
 
     var frequencies = new List<float>();
+    List<String> detectedNotes = new List<string>();
     foreach (var peak in peaks)
     {
         float freqN = peak.index;
@@ -122,6 +126,9 @@ private List<float> GetFrequencies()
             var dR = spectrum[peak.index + 1] / spectrum[peak.index];
             freqN += 0.5f * (dR * dR - dL * dL);
         }
+        else
+        {
+        }
 
         float pitchValue = freqN * (samplerate / 2f) / binSize;
 
@@ -129,13 +136,17 @@ private List<float> GetFrequencies()
         if (!IsFrequencySimilar(frequencies, pitchValue))
         {
             frequencies.Add(pitchValue);
+            foreach (var frequency in frequencies)
+            {
+                detectedNotes.Add(GetDetectedNote(frequency));
+            }
         }
     }
 
     _isPlaying = frequencies.Count > 0;
-    if (!_isPlaying)
+    if (_isPlaying)
     {
-        NoteChanged?.Invoke("");
+        NoteChanged?.Invoke(detectedNotes);
     }
 
     return frequencies;
@@ -171,10 +182,12 @@ private string GetDetectedNote(float frequency)
     return detectedNote;
 }
 
-private void HandleDisplay(float rmsValue, float dbValue, float frequency, string detectedNote)
+private void HandleDisplay(List<string> notes)
 {
-    if (detectedNote != "Unknown")
+    foreach (var detectedNote in notes)
     {
+        if (detectedNote != "Unknown")
+        {
             if (_isPlaying)
             {
                 if (!activeKeys.ContainsKey(detectedNote))
@@ -186,37 +199,40 @@ private void HandleDisplay(float rmsValue, float dbValue, float frequency, strin
                 }
             }
 
-        var notesToRemove = new List<string>();
-        foreach (var kvp in activeKeys)
-        {
-            if (kvp.Key != detectedNote || !_isPlaying)
+            var notesToRemove = new List<string>();
+            foreach (var kvp in activeKeys)
             {
-                var pianoKeyAnimation = kvp.Value.GetComponentInChildren<PianoKeyAnimation>();
-                pianoKeyAnimation.StopNote();
-                notesToRemove.Add(kvp.Key);
+                if (kvp.Key != detectedNote || !_isPlaying)
+                {
+                    var pianoKeyAnimation = kvp.Value.GetComponentInChildren<PianoKeyAnimation>();
+                    pianoKeyAnimation.StopNote();
+                    notesToRemove.Add(kvp.Key);
+                }
+            }
+
+            foreach (var note in notesToRemove)
+            {
+                activeKeys.Remove(note);
+            }
+
+            if (display != null)
+            {
+                /*display.text = "RMS: " + rmsValue.ToString("F2") +
+                               " (" + dbValue.ToString("F1") + " dB)\n" +
+                               "Pitch: " + frequency.ToString("F0") + " Hz\n" +
+                               "Detected Note: " + detectedNote;*/
+                Debug.Log("note: " + detectedNote);
             }
         }
-
-        foreach (var note in notesToRemove)
-        {
-            activeKeys.Remove(note);
-        }
-
-        if (display != null)
-        {
-            display.text = "RMS: " + rmsValue.ToString("F2") +
-                           " (" + dbValue.ToString("F1") + " dB)\n" +
-                           "Pitch: " + frequency.ToString("F0") + " Hz\n" +
-                           "Detected Note: " + detectedNote;
-            Debug.Log("note: " + detectedNote);
-        }
     }
+    
 }
 
 
-    private void HandleNoteChanged(string newNote)
+    private void HandleNoteChanged(List<String> newNotes)
     {
-        // Debug.Log("nouvelle note: " + newNote);
+        Debug.Log("nouvelle note: " + newNotes);
+        HandleDisplay(newNotes);
     }
     
     

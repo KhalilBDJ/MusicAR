@@ -104,7 +104,7 @@ public class PianoKeyPool : MonoBehaviour
             }
             else
             {
-                noteObject = GetObjectFromPool(_naturalNotesPool, sharpNotePrefab);
+                noteObject = GetObjectFromPool(_naturalNotesPool, naturalNotePrefab);
                 noteObject.transform.localScale = new Vector3(_whiteKeyWidth, 1, 1);
                 noteObject.transform.localPosition = new Vector3(_notePositions[noteName] ,0, 0 );
             }
