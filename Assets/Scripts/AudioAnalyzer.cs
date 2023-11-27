@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using UnityEngine.Audio;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using TMPro;
 using Unity.VisualScripting;
 
@@ -39,6 +40,8 @@ public class AudioAnalyzer : MonoBehaviour
     private Dictionary<string, GameObject> activeKeys = new Dictionary<string, GameObject>();
 
     public delegate void NoteChangedEventHandler(List<String> newNotes);
+
+    private List<String> previousNotes = new List<string>();
     public event NoteChangedEventHandler NoteChanged;
 
     void Start()
@@ -47,10 +50,26 @@ public class AudioAnalyzer : MonoBehaviour
         samples = new float[qSamples];
         spectrum = new float[binSize];
         samplerate = AudioSettings.outputSampleRate;
-
+        
         GetComponent<AudioSource>().loop = true;
         GetComponent<AudioSource>().Play();
         GetComponent<AudioSource>().PlayOneShot(test);
+
+        /*// Configure AudioSource to use the Microphone
+        AudioSource audioSource = GetComponent<AudioSource>();
+        audioSource.loop = true;
+        audioSource.mute = mute;
+
+        if (Microphone.devices.Length > 0)
+        {
+            audioSource.clip = Microphone.Start(Microphone.devices[0], true, 10, samplerate);
+            //while (!(Microphone.GetPosition(null) > 0)) {} // Attendez que le microphone commence
+            audioSource.Play();
+        }
+        else
+        {
+            Debug.LogError("Aucun microphone détecté!");
+        }*/
 
         masterMixer.SetFloat("masterVolume", -80f);
     }
@@ -144,10 +163,12 @@ private List<float> GetFrequencies()
     }
 
     _isPlaying = frequencies.Count > 0;
-    if (_isPlaying)
+    if (!(previousNotes.Count == detectedNotes.Count/* && !previousNotes.Except(detectedNotes).Any()*/))
     {
         NoteChanged?.Invoke(detectedNotes);
     }
+
+    previousNotes = detectedNotes;
 
     return frequencies;
 }
@@ -187,7 +208,7 @@ private void HandleDisplay(List<string> notes)
     foreach (var detectedNote in notes)
     {
         if (detectedNote != "Unknown")
-        {
+        {   
             if (_isPlaying)
             {
                 if (!activeKeys.ContainsKey(detectedNote))
@@ -202,7 +223,7 @@ private void HandleDisplay(List<string> notes)
             var notesToRemove = new List<string>();
             foreach (var kvp in activeKeys)
             {
-                if (kvp.Key != detectedNote || !_isPlaying)
+                if ( !_isPlaying) // TODO : PROBLEME D'ARRET DE L'ANIMATIONS
                 {
                     var pianoKeyAnimation = kvp.Value.GetComponentInChildren<PianoKeyAnimation>();
                     pianoKeyAnimation.StopNote();
