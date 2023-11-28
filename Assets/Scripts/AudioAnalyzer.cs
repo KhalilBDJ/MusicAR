@@ -136,6 +136,7 @@ private List<float> GetFrequencies()
 
     var frequencies = new List<float>();
     List<String> detectedNotes = new List<string>();
+    
     foreach (var peak in peaks)
     {
         float freqN = peak.index;
@@ -145,44 +146,50 @@ private List<float> GetFrequencies()
             var dR = spectrum[peak.index + 1] / spectrum[peak.index];
             freqN += 0.5f * (dR * dR - dL * dL);
         }
-        else
-        {
-        }
 
         float pitchValue = freqN * (samplerate / 2f) / binSize;
 
-        // Vérifie si la fréquence est suffisamment unique
         if (!IsFrequencySimilar(frequencies, pitchValue))
         {
             frequencies.Add(pitchValue);
             foreach (var frequency in frequencies)
             {
                 var detectedNote = GetDetectedNote(frequency);
-                detectedNotes.Add(detectedNote);
-                GameObject pianoKey = pianoKeyPool.GetNoteObject(detectedNote);
-                var pianoKeyAnimation = pianoKey.GetComponentInChildren<PianoKeyAnimation>();
-                if (!previousNotes.Contains(detectedNote))
+                if (!detectedNotes.Contains(detectedNote) && !detectedNote.Equals("Unknown"))
                 {
-                    pianoKeyAnimation.PlayNote(detectedNote);
-                    Debug.Log("note: " + detectedNote);
-                }
-                /*else
-                {
-                    pianoKeyAnimation.StopNote();
-                }*/
-            }
-
-            foreach (var previousNote in previousNotes)
-            {
-                if (!detectedNotes.Contains(previousNote))
-                {
-                    GameObject pianoKey = pianoKeyPool.GetNoteObject(previousNote);
-                    var pianoKeyAnimation = pianoKey.GetComponentInChildren<PianoKeyAnimation>();
-                    pianoKeyAnimation.StopNote();
+                    detectedNotes.Add(detectedNote);
                 }
             }
         }
     }
+
+    var stoppedKeys = previousNotes.Except(detectedNotes).ToList();
+    if (stoppedKeys.Count>0)
+    {
+        Debug.Log("TEST " + stoppedKeys[0]);
+    } 
+   
+    foreach (var detectedNote in detectedNotes)
+    {
+        if (!previousNotes.Contains(detectedNote) && !stoppedKeys.Contains(detectedNote))
+        {
+            GameObject pianoKey = pianoKeyPool.GetNoteObject(detectedNote);
+            activeKeys.Add(detectedNote, pianoKey);
+            var pianoKeyAnimation = pianoKey.GetComponentInChildren<PianoKeyAnimation>();
+            pianoKeyAnimation.PlayNote(detectedNote);
+            Debug.Log("note: " + detectedNote);
+        }
+    }
+
+    foreach (var key in stoppedKeys)
+    {
+        GameObject stopNote = activeKeys[key];
+        var pianoKeyAnimation = stopNote.GetComponentInChildren<PianoKeyAnimation>();
+        pianoKeyAnimation.StopNote();
+        activeKeys.Remove(key);
+
+    }
+    
 
     _isPlaying = frequencies.Count > 0;
     if (!(previousNotes.Count == detectedNotes.Count/* && !previousNotes.Except(detectedNotes).Any()*/))
@@ -276,9 +283,7 @@ private void HandleDisplay(string detectedNote)
         HandleDisplay(newNotes);
     }*/
     
-    
-    
-     private Dictionary<string, float> noteFrequencies = new Dictionary<string, float>
+    private Dictionary<string, float> noteFrequencies = new Dictionary<string, float>
     {
         {"C1", 32.70f},
         {"C#1", 34.65f},
