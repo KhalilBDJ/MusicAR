@@ -35,16 +35,16 @@ public class PianoKeyAnimation : MonoBehaviour
         }
     }
 
-    public void PlayNote(string newNoteName)  // Modifié pour accepter le nom de la note
+    public void PlayNote(string newNoteName)  
     {
-        noteName = newNoteName;  // Stockez le nom de la note pour une utilisation ultérieure
+        noteName = newNoteName;  
         isPlaying = true;
-        shouldReturnToPool = false;  // Réinitialiser le flag lorsqu'une note commence à jouer
+        shouldReturnToPool = false;  
     }
 
     public void StopNote()
     {
         isPlaying = false;
-        shouldReturnToPool = true;  // Mettre le flag à true lorsque la note cesse de jouer
+        shouldReturnToPool = true;  
     }
 }

@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using UnityEngine.Audio;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using TMPro;
 using Unity.VisualScripting;
 
@@ -17,9 +18,9 @@ public class AudioAnalyzer : MonoBehaviour
     public float pitchValue;
 
     public int qSamples = 1024;
-    public int binSize = 8192;
+    public int binSize = 16384;
     public float refValue = 0.1f;
-    public float threshold = 0.01f;
+    public float threshold = 0.06f;
     public AudioClip test;
 
     private List<Peak> peaks = new List<Peak>();
@@ -38,7 +39,9 @@ public class AudioAnalyzer : MonoBehaviour
 
     private Dictionary<string, GameObject> activeKeys = new Dictionary<string, GameObject>();
 
-    public delegate void NoteChangedEventHandler(string newNote);
+    public delegate void NoteChangedEventHandler(List<String> newNotes);
+
+    private List<String> previousNotes = new List<string>();
     public event NoteChangedEventHandler NoteChanged;
 
     void Start()
@@ -47,24 +50,30 @@ public class AudioAnalyzer : MonoBehaviour
         samples = new float[qSamples];
         spectrum = new float[binSize];
         samplerate = AudioSettings.outputSampleRate;
-
+        
         GetComponent<AudioSource>().loop = true;
         GetComponent<AudioSource>().Play();
         GetComponent<AudioSource>().PlayOneShot(test);
 
+        /*// Configure AudioSource to use the Microphone
+        AudioSource audioSource = GetComponent<AudioSource>();
+        audioSource.loop = true;
+        audioSource.mute = mute;
+
+        if (Microphone.devices.Length > 0)
+        {
+            audioSource.clip = Microphone.Start(Microphone.devices[0], true, 10, samplerate);
+            //while (!(Microphone.GetPosition(null) > 0)) {} // Attendez que le microphone commence
+            audioSource.Play();
+        }
+        else
+        {
+            Debug.LogError("Aucun microphone détecté!");
+        }*/
+
         masterMixer.SetFloat("masterVolume", -80f);
     }
-
-    private void Awake()
-    {
-        NoteChanged += HandleNoteChanged;
-    }
-
-    private void OnDestroy()
-    {
-        NoteChanged -= HandleNoteChanged;
-    }
-
+    
     void Update()
     {
         AnalyzeSound();
@@ -72,10 +81,8 @@ public class AudioAnalyzer : MonoBehaviour
 
    private void AnalyzeSound()
 {
-    GetRMSAndDBValues(out float rmsValue, out float dbValue);
-    float freqN = GetFrequency();
-    string detectedNote = GetDetectedNote(freqN);
-    HandleDisplay(rmsValue, dbValue, freqN, detectedNote);
+    GetFrequencies();
+
 }
 
 private void GetRMSAndDBValues(out float rmsValue, out float dbValue)
@@ -92,51 +99,91 @@ private void GetRMSAndDBValues(out float rmsValue, out float dbValue)
     if (dbValue < -160) dbValue = -160;
 }
 
-private float GetFrequency()
+private List<float> GetFrequencies()
 {
     GetComponent<AudioSource>().GetSpectrumData(spectrum, 0, FFTWindow.BlackmanHarris);
-    float maxV = 0f;
+    var peaks = new List<Peak>();
+
     for (int i = 0; i < binSize; i++)
     {
-        if (spectrum[i] > maxV && spectrum[i] > threshold)
+        if (spectrum[i] > threshold)
         {
             peaks.Add(new Peak(spectrum[i], i));
-            if (peaks.Count > 5)
-            {
-                peaks.Sort(new AmpComparer());
-            }
         }
     }
 
-    float freqN = 0f;
-    if (peaks.Count > 0)
+    peaks.Sort((p1, p2) => p2.amplitude.CompareTo(p1.amplitude));
+
+    var frequencies = new List<float>();
+    List<String> detectedNotes = new List<string>();
+    
+    foreach (var peak in peaks)
     {
-        maxV = peaks[0].amplitude;
-        int maxN = peaks[0].index;
-        freqN = maxN;
-
-        if (maxN > 0 && maxN < binSize - 1)
+        float freqN = peak.index;
+        if (freqN > 0 && freqN < binSize - 1)
         {
-            var dL = spectrum[maxN - 1] / spectrum[maxN];
-            var dR = spectrum[maxN + 1] / spectrum[maxN];
+            var dL = spectrum[peak.index - 1] / spectrum[peak.index];
+            var dR = spectrum[peak.index + 1] / spectrum[peak.index];
             freqN += 0.5f * (dR * dR - dL * dL);
-            if (freqN == 0)
+            float pitchValue = freqN * (samplerate / 2f) / binSize;
+
+            if (!IsFrequencySimilar(frequencies, pitchValue))
             {
-                _isPlaying = false;
-                NoteChanged?.Invoke("");
-            }
-            else
-            {
-                _isPlaying = true;
+                frequencies.Add(pitchValue);
+                foreach (var frequency in frequencies)
+                {
+                    var detectedNote = GetDetectedNote(frequency);
+                    if (!detectedNotes.Contains(detectedNote) && !detectedNote.Equals("Unknown"))
+                    {
+                        detectedNotes.Add(detectedNote);
+                        if (detectedNote.Contains("#"))
+                        {
+                            Debug.Log("Test");
+                        }
+                    }
+                }
             }
         }
-
-        peaks.Clear();
     }
 
-    float pitchValue = freqN * (samplerate / 2f) / binSize;
-    return pitchValue;
+    var stoppedKeys = previousNotes.Except(detectedNotes).ToList();
+   
+    foreach (var detectedNote in detectedNotes)
+    {
+        if (!previousNotes.Contains(detectedNote) && !stoppedKeys.Contains(detectedNote))
+        {
+            GameObject pianoKey = pianoKeyPool.GetNoteObject(detectedNote);
+            activeKeys.Add(detectedNote, pianoKey);
+            var pianoKeyAnimation = pianoKey.GetComponentInChildren<PianoKeyAnimation>();
+            pianoKeyAnimation.PlayNote(detectedNote);
+            Debug.Log("note: " + detectedNote);
+        }
+    }
+
+    foreach (var key in stoppedKeys)
+    {
+        GameObject stopNote = activeKeys[key];
+        var pianoKeyAnimation = stopNote.GetComponentInChildren<PianoKeyAnimation>();
+        pianoKeyAnimation.StopNote();
+        activeKeys.Remove(key);
+    }
+    previousNotes = detectedNotes;
+
+    return frequencies;
 }
+
+private bool IsFrequencySimilar(List<float> frequencies, float newFrequency, float tolerance = 3.0f)
+{
+    foreach (var frequency in frequencies)
+    {
+        if (Mathf.Abs(frequency - newFrequency) < tolerance)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 
 private string GetDetectedNote(float frequency)
 {
@@ -155,57 +202,8 @@ private string GetDetectedNote(float frequency)
     return detectedNote;
 }
 
-private void HandleDisplay(float rmsValue, float dbValue, float frequency, string detectedNote)
-{
-    if (detectedNote != "Unknown")
-    {
-            if (_isPlaying)
-            {
-                if (!activeKeys.ContainsKey(detectedNote))
-                {
-                    GameObject pianoKey = pianoKeyPool.GetNoteObject(detectedNote);
-                    var pianoKeyAnimation = pianoKey.GetComponentInChildren<PianoKeyAnimation>();
-                    pianoKeyAnimation.PlayNote(detectedNote);
-                    activeKeys.Add(detectedNote, pianoKey);
-                }
-            }
-
-        var notesToRemove = new List<string>();
-        foreach (var kvp in activeKeys)
-        {
-            if (kvp.Key != detectedNote || !_isPlaying)
-            {
-                var pianoKeyAnimation = kvp.Value.GetComponentInChildren<PianoKeyAnimation>();
-                pianoKeyAnimation.StopNote();
-                notesToRemove.Add(kvp.Key);
-            }
-        }
-
-        foreach (var note in notesToRemove)
-        {
-            activeKeys.Remove(note);
-        }
-
-        if (display != null)
-        {
-            display.text = "RMS: " + rmsValue.ToString("F2") +
-                           " (" + dbValue.ToString("F1") + " dB)\n" +
-                           "Pitch: " + frequency.ToString("F0") + " Hz\n" +
-                           "Detected Note: " + detectedNote;
-            Debug.Log("note: " + detectedNote);
-        }
-    }
-}
-
-
-    private void HandleNoteChanged(string newNote)
-    {
-        // Debug.Log("nouvelle note: " + newNote);
-    }
     
-    
-    
-     private Dictionary<string, float> noteFrequencies = new Dictionary<string, float>
+    private Dictionary<string, float> noteFrequencies = new Dictionary<string, float>
     {
         {"C1", 32.70f},
         {"C#1", 34.65f},
