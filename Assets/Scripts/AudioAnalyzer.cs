@@ -20,7 +20,6 @@ public class AudioAnalyzer : MonoBehaviour
     public int qSamples = 1024;
     public int binSize = 16384;
     public float refValue = 0.1f;
-    public float threshold = 0.06f;
     public AudioClip test;
 
     private List<Peak> peaks = new List<Peak>();
@@ -34,6 +33,8 @@ public class AudioAnalyzer : MonoBehaviour
 
     private string _previousNote;
     private bool _isPlaying;
+    private float _threshold = 0.03f;
+
 
     public PianoKeyPool pianoKeyPool;
 
@@ -101,12 +102,15 @@ private void GetRMSAndDBValues(out float rmsValue, out float dbValue)
 
 private List<float> GetFrequencies()
 {
+    float currentRMSValue, currentDBValue;
+    GetRMSAndDBValues(out currentRMSValue, out currentDBValue);
+    float dynamicThreshold = _threshold + (dbValue / 160); // Dynamic adjustment based on dB level
     GetComponent<AudioSource>().GetSpectrumData(spectrum, 0, FFTWindow.BlackmanHarris);
     var peaks = new List<Peak>();
 
     for (int i = 0; i < binSize; i++)
     {
-        if (spectrum[i] > threshold)
+        if (spectrum[i] > dynamicThreshold)
         {
             peaks.Add(new Peak(spectrum[i], i));
         }
@@ -136,10 +140,6 @@ private List<float> GetFrequencies()
                     if (!detectedNotes.Contains(detectedNote) && !detectedNote.Equals("Unknown"))
                     {
                         detectedNotes.Add(detectedNote);
-                        if (detectedNote.Contains("#"))
-                        {
-                            Debug.Log("Test");
-                        }
                     }
                 }
             }
