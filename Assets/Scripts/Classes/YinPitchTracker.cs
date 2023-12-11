@@ -1,82 +1,129 @@
-﻿namespace Classes
-{
-   using System;
+﻿using System;
 
-public class YinPitchTracker
+namespace Classes
 {
-    private float threshold;
-    private int sampleRate;
+    public class YinPitchTracker
+{
     private float[] buffer;
+    private int bufferSize;
+    private float threshold;
+    private int sampleRate; // Ajout de la variable sampleRate
+
 
     public YinPitchTracker(int sampleRate, float threshold = 0.15f)
     {
-        this.sampleRate = sampleRate;
+        this.sampleRate = sampleRate; // Initialisation de sampleRate
+        this.bufferSize = sampleRate / 2;
+        this.buffer = new float[this.bufferSize];
         this.threshold = threshold;
     }
 
-    public float ProcessBuffer(float[] audioBuffer)
+    public float GetPitch(float[] audioBuffer)
     {
-        buffer = new float[audioBuffer.Length / 2];
-        DifferenceFunction(audioBuffer);
-        CumulativeMeanNormalizedDifference();
-        int tau = AbsoluteThreshold();
-        if (tau != -1)
-        {
-            float betterTau = ParabolicInterpolation(tau);
-            return sampleRate / betterTau;
-        }
-        return -1;
-    }
+        int tauEstimate;
+        float pitchInHertz;
 
-    private void DifferenceFunction(float[] audioBuffer)
-    {
-        int length = buffer.Length;
-        for (int tau = 0; tau < length; tau++)
+        // Step 1: Difference function
+        for (int tau = 0; tau < this.bufferSize; tau++)
         {
-            for (int i = 0; i < length; i++)
+            this.buffer[tau] = 0;
+            for (int i = 0; i < this.bufferSize - tau; i++) // Modification ici
             {
                 float delta = audioBuffer[i] - audioBuffer[i + tau];
-                buffer[tau] += delta * delta;
+                this.buffer[tau] += delta * delta;
             }
         }
-    }
 
-    private void CumulativeMeanNormalizedDifference()
-    {
-        buffer[0] = 1;
+
+        // Step 2: Cumulative mean normalized difference function
         float runningSum = 0;
-        for (int tau = 1; tau < buffer.Length; tau++)
+        this.buffer[0] = 1;
+        for (int tau = 1; tau < this.bufferSize; tau++)
         {
-            runningSum += buffer[tau];
-            buffer[tau] *= tau / runningSum;
+            runningSum += this.buffer[tau];
+            this.buffer[tau] *= tau / runningSum;
         }
-    }
 
-    private int AbsoluteThreshold()
-    {
-        for (int tau = 2; tau < buffer.Length; tau++)
+        // Step 3: Absolute threshold
+        for (tauEstimate = 2; tauEstimate < this.bufferSize; tauEstimate++)
         {
-            if (buffer[tau] < threshold)
+            if (this.buffer[tauEstimate] < this.threshold)
             {
-                while (tau + 1 < buffer.Length && buffer[tau + 1] < buffer[tau])
-                    tau++;
-                return tau;
+                while (tauEstimate + 1 < this.bufferSize && this.buffer[tauEstimate + 1] < this.buffer[tauEstimate])
+                    tauEstimate++;
+                break;
             }
         }
-        return -1;
+
+        // Step 4: Check if no pitch found
+        if (tauEstimate == this.bufferSize || this.buffer[tauEstimate] >= this.threshold)
+        {
+            pitchInHertz = -1;
+        }
+        else
+        {
+            // Step 5: Interpolated pitch
+            pitchInHertz = sampleRate / ParabolicInterpolation(tauEstimate);
+        }
+
+        return pitchInHertz;
     }
 
-    private float ParabolicInterpolation(int tau)
+    private float ParabolicInterpolation(int tauEstimate)
     {
-        float betterTau = tau;
-        if (tau > 1 && tau < buffer.Length - 1)
+        float betterTau;
+        int x0, x2;
+
+        if (tauEstimate < 1)
+        {
+            x0 = tauEstimate;
+        }
+        else
+        {
+            x0 = tauEstimate - 1;
+        }
+
+        if (tauEstimate + 1 < this.bufferSize)
+        {
+            x2 = tauEstimate + 1;
+        }
+        else
+        {
+            x2 = tauEstimate;
+        }
+
+        if (x0 == tauEstimate)
+        {
+            if (this.buffer[tauEstimate] <= this.buffer[x2])
+            {
+                betterTau = tauEstimate;
+            }
+            else
+            {
+                betterTau = x2;
+            }
+        }
+        else if (x2 == tauEstimate)
+        {
+            if (this.buffer[tauEstimate] <= this.buffer[x0])
+            {
+                betterTau = tauEstimate;
+            }
+            else
+            {
+                betterTau = x0;
+            }
+        }
+        else
         {
             float s0, s1, s2;
-            s0 = buffer[tau - 1];
-            s1 = buffer[tau];
-            s2 = buffer[tau + 1];
-            betterTau = tau + (s2 - s0) / (2 * (2 * s1 - s2 - s0));
+            s0 = this.buffer[x0];
+            s1 = this.buffer[tauEstimate];
+            s2 = this.buffer[x2];
+            // Parabolic interpolation formula
+            betterTau = tauEstimate + (s2 - s0) / (2 * (2 * s1 - s2 - s0));
         }
+
         return betterTau;
     }
 }

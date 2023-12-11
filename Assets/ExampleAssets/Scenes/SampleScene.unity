@@ -821,8 +821,7 @@ MonoBehaviour:
   qSamples: 1024
   binSize: 8192
   refValue: 0.1
-  threshold: 0.02
-  test: {fileID: 8300000, guid: cc8cfc6ce202cab48b8d81611474c5b7, type: 3}
+  test: {fileID: 8300000, guid: 69e757ed84b1e1142bd2cc4c5cfe5109, type: 3}
   display: {fileID: 732489970}
   mute: 0
   masterMixer: {fileID: 24100000, guid: 3835f19220cc5854db7b549d3b225f75, type: 2}
@@ -838,7 +837,7 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 24300002, guid: 3835f19220cc5854db7b549d3b225f75,
     type: 2}
-  m_audioClip: {fileID: 8300000, guid: cc8cfc6ce202cab48b8d81611474c5b7, type: 3}
+  m_audioClip: {fileID: 8300000, guid: 69e757ed84b1e1142bd2cc4c5cfe5109, type: 3}
   m_PlayOnAwake: 0
   m_Volume: 1
   m_Pitch: 1

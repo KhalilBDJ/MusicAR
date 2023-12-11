@@ -11,43 +11,54 @@ using Unity.VisualScripting;
 [RequireComponent(typeof(AudioSource))]
 public class AudioAnalyzer : MonoBehaviour
 {
-     public float rmsValue;
+    public float rmsValue;
     public float dbValue;
     public float pitchValue;
 
     public int qSamples = 1024;
+    public int binSize = 16384;
+    public float refValue = 0.1f;
     public AudioClip test;
 
+    private List<Peak> peaks = new List<Peak>();
     float[] samples;
+    float[] spectrum;
     int samplerate;
 
     public TMP_Text display;
     public bool mute = true;
     public AudioMixer masterMixer;
 
+    private string _previousNote;
+    private bool _isPlaying;
+    private float _threshold = 0.025f;
+    private YinPitchTracker _yinPitchTracker;
+
+
     public PianoKeyPool pianoKeyPool;
 
-    private YinPitchTracker pitchTracker;
-    private float[] audioBuffer;
-
     private Dictionary<string, GameObject> activeKeys = new Dictionary<string, GameObject>();
-    private List<string> previousNotes = new List<string>();
+
+    public delegate void NoteChangedEventHandler(List<String> newNotes);
+
+    private List<String> previousNotes = new List<string>();
+    public event NoteChangedEventHandler NoteChanged;
 
     void Start()
     {
+        _isPlaying = false;
         samples = new float[qSamples];
+        spectrum = new float[binSize];
         samplerate = AudioSettings.outputSampleRate;
-
+        _yinPitchTracker = new YinPitchTracker(1024, 0.10f);
         GetComponent<AudioSource>().loop = true;
         GetComponent<AudioSource>().Play();
         GetComponent<AudioSource>().PlayOneShot(test);
+        
 
         masterMixer.SetFloat("masterVolume", -80f);
-
-        pitchTracker = new YinPitchTracker(samplerate, 0.20f);
-        audioBuffer = new float[qSamples];
     }
-
+    
     void Update()
     {
         AnalyzeSound();
@@ -55,58 +66,126 @@ public class AudioAnalyzer : MonoBehaviour
 
     private void AnalyzeSound()
     {
-        GetComponent<AudioSource>().GetOutputData(audioBuffer, 0);
-        float pitch = pitchTracker.ProcessBuffer(audioBuffer);
-        if (pitch != -1)
-        {
-            string note = GetDetectedNote(pitch);
-            ProcessDetectedNotes(note);
-        }
+    GetFrequencies();
+    Debug.Log(GetDetectedNote(_yinPitchTracker.GetPitch(samples)));
+
     }
 
-    private void ProcessDetectedNotes(string detectedNote)
+private void GetRMSAndDBValues(out float rmsValue, out float dbValue)
+{
+    GetComponent<AudioSource>().GetOutputData(samples, 0);
+    int i = 0;
+    float sum = 0f;
+    for (i = 0; i < qSamples; i++)
     {
-        var detectedNotes = new List<string> { detectedNote };
-        var stoppedKeys = previousNotes.Except(detectedNotes).ToList();
-
-        foreach (var note in detectedNotes)
-        {
-            if (!previousNotes.Contains(note) && !stoppedKeys.Contains(note) && !note.Equals("Unknown"))
-            {
-                GameObject pianoKey = pianoKeyPool.GetNoteObject(note);
-                activeKeys.Add(note, pianoKey);
-                var pianoKeyAnimation = pianoKey.GetComponentInChildren<PianoKeyAnimation>();
-                pianoKeyAnimation.PlayNote(note);
-            }
-        }
-
-        foreach (var key in stoppedKeys)
-        {
-            if (activeKeys.TryGetValue(key, out GameObject stopNote))
-            {
-                var pianoKeyAnimation = stopNote.GetComponentInChildren<PianoKeyAnimation>();
-                pianoKeyAnimation.StopNote();
-                activeKeys.Remove(key);
-            }
-        }
-
-        previousNotes = detectedNotes;
+        sum += samples[i] * samples[i];
     }
+    rmsValue = Mathf.Sqrt(sum / qSamples);
+    dbValue = 20 * Mathf.Log10(rmsValue / refValue);
+    if (dbValue < -160) dbValue = -160;
+}
 
-    private string GetDetectedNote(float frequency)
+private List<float> GetFrequencies()
+{
+    float currentRMSValue, currentDBValue;
+    GetRMSAndDBValues(out currentRMSValue, out currentDBValue);
+    float dynamicThreshold = _threshold + (dbValue / 160); // Dynamic adjustment based on dB level
+    GetComponent<AudioSource>().GetSpectrumData(spectrum, 0, FFTWindow.BlackmanHarris);
+    var peaks = new List<Peak>();
+
+    for (int i = 0; i < binSize; i++)
     {
-        foreach (var kvp in noteFrequencies)
+        if (spectrum[i] > dynamicThreshold)
         {
-            float minFrequency = kvp.Value - 1.0f;
-            float maxFrequency = kvp.Value + 1.0f;
+            peaks.Add(new Peak(spectrum[i], i));
+        }
+    }
 
-            if (frequency >= minFrequency && frequency <= maxFrequency)
+    peaks.Sort((p1, p2) => p2.amplitude.CompareTo(p1.amplitude));
+
+    var frequencies = new List<float>();
+    List<String> detectedNotes = new List<string>();
+    
+    foreach (var peak in peaks)
+    {
+        float freqN = peak.index;
+        if (freqN > 0 && freqN < binSize - 1)
+        {
+            var dL = spectrum[peak.index - 1] / spectrum[peak.index];
+            var dR = spectrum[peak.index + 1] / spectrum[peak.index];
+            freqN += 0.5f * (dR * dR - dL * dL);
+            float pitchValue = freqN * (samplerate / 2f) / binSize;
+
+            if (!IsFrequencySimilar(frequencies, pitchValue))
             {
-                return kvp.Key;
+                frequencies.Add(pitchValue);
+                foreach (var frequency in frequencies)
+                {
+                    var detectedNote = GetDetectedNote(frequency);
+                    if (!detectedNotes.Contains(detectedNote) && !detectedNote.Equals("Unknown"))
+                    {
+                        detectedNotes.Add(detectedNote);
+                    }
+                }
             }
         }
-        return "Unknown";
     }
+
+    var stoppedKeys = previousNotes.Except(detectedNotes).ToList();
+   
+    foreach (var detectedNote in detectedNotes)
+    {
+        if (!previousNotes.Contains(detectedNote) && !stoppedKeys.Contains(detectedNote))
+        {
+            GameObject pianoKey = pianoKeyPool.GetNoteObject(detectedNote);
+            activeKeys.Add(detectedNote, pianoKey);
+            var pianoKeyAnimation = pianoKey.GetComponentInChildren<PianoKeyAnimation>();
+            pianoKeyAnimation.PlayNote(detectedNote);
+           // Debug.Log("note: " + detectedNote);
+        }
+    }
+
+    foreach (var key in stoppedKeys)
+    {
+        GameObject stopNote = activeKeys[key];
+        var pianoKeyAnimation = stopNote.GetComponentInChildren<PianoKeyAnimation>();
+        pianoKeyAnimation.StopNote();
+        activeKeys.Remove(key);
+    }
+    previousNotes = detectedNotes;
+
+    return frequencies;
+}
+
+private bool IsFrequencySimilar(List<float> frequencies, float newFrequency, float tolerance = 3.0f)
+{
+    foreach (var frequency in frequencies)
+    {
+        if (Mathf.Abs(frequency - newFrequency) < tolerance)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+private string GetDetectedNote(float frequency)
+{
+    string detectedNote = "Unknown";
+    foreach (var kvp in noteFrequencies)
+    {
+        float minFrequency = kvp.Value - 1.0f;
+        float maxFrequency = kvp.Value + 1.0f;
+
+        if (frequency >= minFrequency && frequency <= maxFrequency)
+        {
+            detectedNote = kvp.Key;
+            break;
+        }
+    }
+    return detectedNote;
+}
 
     
     private Dictionary<string, float> noteFrequencies = new Dictionary<string, float>
