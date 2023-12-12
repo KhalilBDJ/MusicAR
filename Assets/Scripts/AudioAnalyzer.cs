@@ -15,6 +15,8 @@ public class AudioAnalyzer : MonoBehaviour
     public float dbValue;
     public float pitchValue;
 
+    public AudioSource source;
+
     public int qSamples = 1024;
     public int binSize = 16384;
     public float refValue = 0.1f;
@@ -33,6 +35,7 @@ public class AudioAnalyzer : MonoBehaviour
     private bool _isPlaying;
     private float _threshold = 0.025f;
     private YinPitchTracker _yinPitchTracker;
+    private AudioPitchEstimator _pitchEstimator;
 
 
     public PianoKeyPool pianoKeyPool;
@@ -50,10 +53,11 @@ public class AudioAnalyzer : MonoBehaviour
         samples = new float[qSamples];
         spectrum = new float[binSize];
         samplerate = AudioSettings.outputSampleRate;
-        _yinPitchTracker = new YinPitchTracker(1024, 0.10f);
+        //_yinPitchTracker = new YinPitchTracker(1024, 0.10f);
         GetComponent<AudioSource>().loop = true;
         GetComponent<AudioSource>().Play();
         GetComponent<AudioSource>().PlayOneShot(test);
+        _pitchEstimator = new AudioPitchEstimator();
         
 
         masterMixer.SetFloat("masterVolume", -80f);
@@ -62,21 +66,21 @@ public class AudioAnalyzer : MonoBehaviour
     void Update()
     {
         AnalyzeSound();
+        Debug.Log(GetDetectedNote(_pitchEstimator.Estimate(source)));
     }
 
     private void AnalyzeSound()
     {
     GetFrequencies();
-    Debug.Log(GetDetectedNote(_yinPitchTracker.GetPitch(samples)));
+   // Debug.Log(GetDetectedNote(_yinPitchTracker.GetPitch(samples)));
 
     }
 
 private void GetRMSAndDBValues(out float rmsValue, out float dbValue)
 {
     GetComponent<AudioSource>().GetOutputData(samples, 0);
-    int i = 0;
     float sum = 0f;
-    for (i = 0; i < qSamples; i++)
+    for (int i = 0; i < qSamples; i++)
     {
         sum += samples[i] * samples[i];
     }

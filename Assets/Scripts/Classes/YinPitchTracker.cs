@@ -1,4 +1,5 @@
 ﻿using System;
+using UnityEngine;
 
 namespace Classes
 {
@@ -65,8 +66,8 @@ namespace Classes
             // Step 5: Interpolated pitch
             pitchInHertz = sampleRate / ParabolicInterpolation(tauEstimate);
         }
-
-        return pitchInHertz;
+        //Debug.Log(pitchInHertz* 46.53f);
+        return pitchInHertz* 46.53f;
     }
 
     private float ParabolicInterpolation(int tauEstimate)
