@@ -28,7 +28,7 @@ public class PianoKeyAnimation : MonoBehaviour
         }
         
 
-        if (shouldReturnToPool && transform.position.z >= (10 + transform.position.y))
+        if (shouldReturnToPool && transform.position.z <= -50 )
         {
             shouldReturnToPool = false; 
             pianoKeyPool.ReturnNoteObject(gameObject, noteName);  

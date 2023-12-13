@@ -33,7 +33,7 @@ public class AudioAnalyzer : MonoBehaviour
 
     private string _previousNote;
     private bool _isPlaying;
-    private float _threshold = 0.025f;
+    private float _threshold = 0.03f;
     private YinPitchTracker _yinPitchTracker;
     private AudioPitchEstimator _pitchEstimator;
 
@@ -76,25 +76,35 @@ public class AudioAnalyzer : MonoBehaviour
 
     }
 
-private void GetRMSAndDBValues(out float rmsValue, out float dbValue)
-{
-    GetComponent<AudioSource>().GetOutputData(samples, 0);
-    float sum = 0f;
-    for (int i = 0; i < qSamples; i++)
+    private void GetRMSAndDBValues(out float rmsValue, out float dbValue)
     {
-        sum += samples[i] * samples[i];
+        GetComponent<AudioSource>().GetOutputData(samples, 0);
+        float sum = 0f;
+        for (int i = 0; i < qSamples; i++)
+        {
+            sum += samples[i] * samples[i];
+        }
+        rmsValue = Mathf.Sqrt(sum / qSamples);
+
+        // Vérification si rmsValue est très petit
+        if (rmsValue > 0) // Ajoutez une tolérance si nécessaire
+        {
+            dbValue = 20 * Mathf.Log10(rmsValue / refValue);
+            dbValue = Mathf.Max(dbValue, -160); // Plancher pour dbValue
+        }
+        else
+        {
+            dbValue = -160; // Valeur minimale pour éviter -infini
+        }
     }
-    rmsValue = Mathf.Sqrt(sum / qSamples);
-    dbValue = 20 * Mathf.Log10(rmsValue / refValue);
-    if (dbValue < -160) dbValue = -160;
-}
+
 
 private List<float> GetFrequencies()
 {
     float currentRMSValue, currentDBValue;
     GetRMSAndDBValues(out currentRMSValue, out currentDBValue);
-    float dynamicThreshold = _threshold + (dbValue / 160); // Dynamic adjustment based on dB level
-    GetComponent<AudioSource>().GetSpectrumData(spectrum, 0, FFTWindow.BlackmanHarris);
+    float dynamicThreshold = _threshold * ( 1+ Mathf.Abs(currentDBValue / 160));
+    GetComponent<AudioSource>().GetSpectrumData(spectrum, 0, FFTWindow.Hanning);
     var peaks = new List<Peak>();
 
     for (int i = 0; i < binSize; i++)
@@ -119,6 +129,7 @@ private List<float> GetFrequencies()
             var dR = spectrum[peak.index + 1] / spectrum[peak.index];
             freqN += 0.5f * (dR * dR - dL * dL);
             float pitchValue = freqN * (samplerate / 2f) / binSize;
+            //float pitchValue = _pitchEstimator.Estimate(source);
 
             if (!IsFrequencySimilar(frequencies, pitchValue))
             {
@@ -134,7 +145,21 @@ private List<float> GetFrequencies()
             }
         }
     }
+    
+    /*float pitchValue = _pitchEstimator.Estimate(source);
 
+    if (!IsFrequencySimilar(frequencies, pitchValue))
+    {
+        frequencies.Add(pitchValue);
+        foreach (var frequency in frequencies)
+        {
+            var detectedNote = GetDetectedNote(frequency);
+            if (!detectedNotes.Contains(detectedNote) && !detectedNote.Equals("Unknown"))
+            {
+                detectedNotes.Add(detectedNote);
+            }
+        }
+    }*/
     var stoppedKeys = previousNotes.Except(detectedNotes).ToList();
    
     foreach (var detectedNote in detectedNotes)
