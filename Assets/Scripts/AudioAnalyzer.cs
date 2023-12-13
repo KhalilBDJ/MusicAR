@@ -146,20 +146,6 @@ private List<float> GetFrequencies()
         }
     }
     
-    /*float pitchValue = _pitchEstimator.Estimate(source);
-
-    if (!IsFrequencySimilar(frequencies, pitchValue))
-    {
-        frequencies.Add(pitchValue);
-        foreach (var frequency in frequencies)
-        {
-            var detectedNote = GetDetectedNote(frequency);
-            if (!detectedNotes.Contains(detectedNote) && !detectedNote.Equals("Unknown"))
-            {
-                detectedNotes.Add(detectedNote);
-            }
-        }
-    }*/
     var stoppedKeys = previousNotes.Except(detectedNotes).ToList();
    
     foreach (var detectedNote in detectedNotes)

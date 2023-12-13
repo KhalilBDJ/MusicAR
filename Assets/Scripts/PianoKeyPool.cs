@@ -19,6 +19,7 @@ public class PianoKeyPool : MonoBehaviour
     private float _whiteKeyWidth;
     private float _blackKeyWidth;
     private float _currentXPosition;
+    private float _parentHeight;
 
     private readonly Dictionary<string, float> _notePositions = new Dictionary<string, float>();
     private readonly string[] _names = {
@@ -50,10 +51,14 @@ public class PianoKeyPool : MonoBehaviour
         InitializePool(_sharpNotesPool, sharpNotePrefab, initialPoolSize);
         InitializePool(_naturalNotesPool, naturalNotePrefab, initialPoolSize);
         InitializeNotePositions();
-        foreach (var note in _names)
+        /*foreach (var note in _names)
         {
             GetNoteObject(note);
-        }
+        }*/
+
+        Debug.Log(pianoGameObject.GetComponentInParent<Transform>().name);
+        Debug.Log(GetComponentInParent<Transform>().name);
+        _parentHeight = pianoGameObject.GetComponentInParent<MeshRenderer>().bounds.size.y;
     }
     
     private void InitializePool(Queue<GameObject> pool, GameObject prefab, int size)
@@ -99,14 +104,14 @@ public class PianoKeyPool : MonoBehaviour
             {
                 noteObject = GetObjectFromPool(_sharpNotesPool, sharpNotePrefab);
                 noteObject.transform.localScale = new Vector3(_blackKeyWidth, 1, 1);
-                noteObject.transform.localPosition = new Vector3(_notePositions[noteName] ,0, 0 );
+                noteObject.transform.localPosition = new Vector3(_notePositions[noteName] ,0, - _parentHeight/2 );
 
             }
             else
             {
                 noteObject = GetObjectFromPool(_naturalNotesPool, naturalNotePrefab);
                 noteObject.transform.localScale = new Vector3(_whiteKeyWidth, 1, 1);
-                noteObject.transform.localPosition = new Vector3(_notePositions[noteName] ,0, 0 );
+                noteObject.transform.localPosition = new Vector3(_notePositions[noteName] ,0, - _parentHeight/2 );
             }
             noteObject.name = noteName;
             noteObject.SetActive(true);
