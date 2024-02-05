@@ -390,6 +390,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_TrackedImageManager: {fileID: 1763800858}
+  prefab: {fileID: 7876162921344913273, guid: 72d2d9345c02c5241b0b12891f1600b3, type: 3}
   audioClip: {fileID: 8300000, guid: e004f89ef7f289f4fa313f34877da7a0, type: 3}
   audioSource: {fileID: 825652056}
 --- !u!82 &825652056
@@ -611,8 +612,7 @@ MonoBehaviour:
   m_SerializedLibrary: {fileID: 11400000, guid: a4db1be929a4f674abc9a1584069614d,
     type: 2}
   m_MaxNumberOfMovingImages: 0
-  m_TrackedImagePrefab: {fileID: 7876162921344913273, guid: 72d2d9345c02c5241b0b12891f1600b3,
-    type: 3}
+  m_TrackedImagePrefab: {fileID: 0}
 --- !u!114 &1763800859
 MonoBehaviour:
   m_ObjectHideFlags: 0

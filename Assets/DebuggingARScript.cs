@@ -13,8 +13,8 @@ public class DebuggingARScript : MonoBehaviour
     public AudioClip audioClip;
     public AudioSource audioSource;
 
-    // Stockage temporaire pour les images détectées
-    private Dictionary<string, ARTrackedImage> trackedImages = new Dictionary<string, ARTrackedImage>();
+    // Utilisez une liste pour stocker les instances de l'image détectée
+    private List<ARTrackedImage> trackedImageInstances = new List<ARTrackedImage>();
 
     void OnEnable() => m_TrackedImageManager.trackedImagesChanged += OnChanged;
 
@@ -22,56 +22,70 @@ public class DebuggingARScript : MonoBehaviour
 
     void OnChanged(ARTrackedImagesChangedEventArgs eventArgs)
     {
-        // Ajouter ou mettre à jour les images détectées
         foreach (var newImage in eventArgs.added)
         {
-            trackedImages[newImage.referenceImage.name] = newImage;
+            trackedImageInstances.Add(newImage);
+            TryPlacePrefabBetweenImages();
         }
 
         foreach (var updatedImage in eventArgs.updated)
         {
-            trackedImages[updatedImage.referenceImage.name] = updatedImage;
+            // Optionnellement, gérer les mises à jour spécifiques ici
         }
 
-        // Retirer les images qui ne sont plus détectées
         foreach (var removedImage in eventArgs.removed)
         {
-            if (trackedImages.ContainsKey(removedImage.referenceImage.name))
-            {
-                trackedImages.Remove(removedImage.referenceImage.name);
-            }
+            trackedImageInstances.Remove(removedImage);
         }
+    }
 
-        // Vérifier si deux images spécifiques sont détectées
-        if (trackedImages.Count == 2)
+    void TryPlacePrefabBetweenImages()
+    {
+        // Assurez-vous qu'il y a exactement 2 instances de l'image détectée
+        if (trackedImageInstances.Count == 2)
         {
-            ARTrackedImage[] images = new ARTrackedImage[2];
-            trackedImages.Values.CopyTo(images, 0);
-            PlacePrefabBetweenImages(images[0], images[1]);
+            PlacePrefabBetweenImages(trackedImageInstances[0], trackedImageInstances[1]);
         }
     }
 
     void PlacePrefabBetweenImages(ARTrackedImage image1, ARTrackedImage image2)
     {
-        // Calculer la position moyenne entre les deux images
         Vector3 positionBetweenImages = (image1.transform.position + image2.transform.position) / 2;
-        
-        // Optionnel : Calculer l'orientation moyenne (si nécessaire)
         Quaternion rotationBetweenImages = Quaternion.Lerp(image1.transform.rotation, image2.transform.rotation, 0.5f);
 
-        // Créer une instance du prefab et la positionner
-        GameObject prefabInstance = Instantiate(prefab, positionBetweenImages, rotationBetweenImages);
+        // Calcul de la largeur virtuelle nécessaire
+        float distanceBetweenImages = Vector3.Distance(image1.transform.position, image2.transform.position);
 
-        // Ajuster la taille ou l'orientation de l'objet selon les besoins
-        AdjustObjectSizeOrOrientation(prefabInstance, image1, image2);
+        // Créer ou déplacer l'objet entre les images
+        InstantiateOrUpdatePrefab(positionBetweenImages, rotationBetweenImages, distanceBetweenImages);
     }
 
-    void AdjustObjectSizeOrOrientation(GameObject prefabInstance, ARTrackedImage image1, ARTrackedImage image2)
+    void InstantiateOrUpdatePrefab(Vector3 position, Quaternion rotation, float width)
     {
-        // Exemple : ajuster la largeur de l'objet pour correspondre à la distance entre les deux images
-        float distance = Vector3.Distance(image1.transform.position, image2.transform.position);
-        // Ajustez cette partie selon la façon dont votre objet doit être redimensionné ou orienté
-        prefabInstance.transform.localScale = new Vector3(distance, prefabInstance.transform.localScale.y, prefabInstance.transform.localScale.z);
+        audioSource.PlayOneShot(audioClip);
+
+        GameObject existingInstance = GameObject.FindGameObjectWithTag("ARObject"); // Assurez-vous que votre prefab a ce tag
+        if (existingInstance != null)
+        {
+            existingInstance.transform.position = position;
+            existingInstance.transform.rotation = rotation;
+            AdjustScale(existingInstance, width); // Ajuster l'échelle ici
+        }
+        else
+        {
+            existingInstance = Instantiate(prefab, position, rotation);
+            AdjustScale(existingInstance, width); // Ajuster l'échelle ici aussi
+        }
+    }
+
+    void AdjustScale(GameObject obj, float width)
+    {
+        // Ici, ajustez la largeur de l'objet pour qu'elle corresponde à la distance entre les images
+        // Cette étape dépend de la façon dont votre objet est structuré et de quelle dimension représente sa "largeur"
+        // Par exemple, si la largeur est sur l'axe X local de l'objet :
+        Vector3 newScale = obj.transform.localScale;
+        newScale.x = width; // Ajustez cette ligne selon la structure de votre objet
+        obj.transform.localScale = newScale;
     }
 
     void Start()
