@@ -66,7 +66,7 @@ public class AudioAnalyzer : MonoBehaviour
     void Update()
     {
         AnalyzeSound();
-        Debug.Log(GetDetectedNote(_pitchEstimator.Estimate(source)));
+        UnityEngine.Debug.Log(GetDetectedNote(_pitchEstimator.Estimate(source)));
     }
 
     private void AnalyzeSound()

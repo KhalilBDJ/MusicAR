@@ -1,7 +1,6 @@
 using System;
 using UnityEngine;
 using System.Collections.Generic;
-using Unity.Tutorials.Core.Editor;
 
 public class PianoKeyPool : MonoBehaviour
 {
@@ -51,10 +50,7 @@ public class PianoKeyPool : MonoBehaviour
         InitializePool(_sharpNotesPool, sharpNotePrefab, initialPoolSize);
         InitializePool(_naturalNotesPool, naturalNotePrefab, initialPoolSize);
         InitializeNotePositions();
-        /*foreach (var note in _names)
-        {
-            GetNoteObject(note);
-        }*/
+        
 
         Debug.Log(pianoGameObject.GetComponentInParent<Transform>().name);
         Debug.Log(GetComponentInParent<Transform>().name);
@@ -98,7 +94,7 @@ public class PianoKeyPool : MonoBehaviour
     public GameObject GetNoteObject(string noteName)
     {
         GameObject noteObject;
-        if (!noteName.IsNullOrEmpty())
+        if (!noteName.Equals(""))
         {
             if (noteName.Contains("#"))
             {
@@ -140,7 +136,7 @@ public class PianoKeyPool : MonoBehaviour
     {
         noteObject.SetActive(false);
 
-        if (!noteName.IsNullOrEmpty())
+        if (!noteName.Equals(""))
         {
             if (noteName.Contains("#"))
             {

@@ -28,7 +28,8 @@ public class ChordsFinder : MonoBehaviour
         List<float> peakFrequencies = FindPeakFrequencies(spectrumData);
         foreach (float freq in peakFrequencies)
         {
-            Debug.Log("Note Frequency: " + freq);
+            UnityEngine.Debug.Log("Note Frequency: " + freq);
+            
         }
     }
 

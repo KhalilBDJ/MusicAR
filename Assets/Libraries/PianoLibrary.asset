@@ -10,20 +10,20 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 848409ee8ba454f42a5ddff137688a27, type: 3}
-  m_Name: ReferenceImageLibrary
+  m_Name: PianoLibrary
   m_EditorClassIdentifier: 
-  m_GuidLow: 4960640657071991820
-  m_GuidHigh: 11990324006906585478
+  m_GuidLow: 5149269339306478859
+  m_GuidHigh: 14125169685723451269
   m_DataStore:
     m_Storage: []
   m_Images:
   - m_SerializedGuid:
-      m_GuidLow: 4614981097328356866
-      m_GuidHigh: 6636863283558164667
+      m_GuidLow: 5663861033377689032
+      m_GuidHigh: 1829743282098950542
     m_SerializedTextureGuid:
-      m_GuidLow: 8040166744793361059
-      m_GuidHigh: 11075422788230110888
+      m_GuidLow: 13151730972082993156
+      m_GuidHigh: 17646675022162491466
     m_Size: {x: 0, y: 0}
     m_SpecifySize: 0
-    m_Name: "DALL\xB7E 2023-03-10 10.50.55 - a man with a FC Barcelona shirt on"
+    m_Name: Kawa
     m_Texture: {fileID: 0}
