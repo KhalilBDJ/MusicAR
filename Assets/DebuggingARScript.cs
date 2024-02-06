@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.XR.CoreUtils;
 using UnityEngine;
 using UnityEngine.XR.ARFoundation;
 
@@ -9,6 +10,8 @@ public class DebuggingARScript : MonoBehaviour
     ARTrackedImageManager m_TrackedImageManager;
 
     [SerializeField] private GameObject prefab;
+    [SerializeField] private XROrigin _xrOrigin;
+    [SerializeField] private GameObject _gameObjectToPlace;
 
     public AudioClip audioClip;
     public AudioSource audioSource;
@@ -48,11 +51,26 @@ public class DebuggingARScript : MonoBehaviour
 
     void PlacePrefabBetweenImages(ARTrackedImage image1, ARTrackedImage image2)
     {
-        Vector3 positionBetweenImages = (image1.transform.position + image2.transform.position) / 2;
-        // Assurez-vous que l'objet est placé au même niveau Y que les images
-        positionBetweenImages.y = image1.transform.position.y; // ou une valeur spécifique si nécessaire
-
-        float distanceBetweenImages = Vector3.Distance(image1.transform.position, image2.transform.position);
+        //Vector3 positionBetweenImages = (image1.transform.position + image2.transform.position) / 2;
+        Vector3 positionBetweenImages = new Vector3();
+        Instantiate(_gameObjectToPlace, new Vector3(image1.transform.position.x - image1.size.x / 2,
+            image1.transform.position.y, image1.transform.position.z), Quaternion.identity);
+        if (image1.transform.position.x>image2.transform.position.x)
+        {
+            positionBetweenImages = (new Vector3(image1.transform.position.x - image1.size.x / 2,
+                image1.transform.position.y, image1.transform.position.z) + new Vector3(
+                image2.transform.position.x + image2.size.x / 2,
+                image2.transform.position.y, image2.transform.position.z))/2;
+        }
+        else
+        {
+            positionBetweenImages = (new Vector3(image1.transform.position.x + image1.size.x / 2,
+                image1.transform.position.y, image1.transform.position.z) + new Vector3(
+                image2.transform.position.x - image2.size.x / 2,
+                image2.transform.position.y, image2.transform.position.z))/2;
+        }
+     
+        float distanceBetweenImages = Vector3.Distance(image1.transform.position, image2.transform.position) -(image1.size.x/2 + image2.size.x/2 );
         Vector3 direction = (image2.transform.position - image1.transform.position).normalized;
         Quaternion rotation = Quaternion.LookRotation(direction);
 
@@ -72,16 +90,15 @@ public class DebuggingARScript : MonoBehaviour
         }
         else
         {
-            existingInstance = Instantiate(prefab, position, rotation);
+            existingInstance = Instantiate(prefab, position, rotation, _xrOrigin.transform);
             AdjustScale(existingInstance, distance);
         }
     }
 
     void AdjustScale(GameObject obj, float distance)
     {
-        // Ajustez cette méthode pour modifier la taille de l'objet en fonction de la distance entre les images
         Vector3 newScale = obj.transform.localScale;
-        newScale.z = distance; // Ajustez cet axe selon l'orientation de votre objet
+        newScale.z = distance; 
         obj.transform.localScale = newScale;
     }
 }

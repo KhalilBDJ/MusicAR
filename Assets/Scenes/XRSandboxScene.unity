@@ -1299,6 +1299,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_TrackedImageManager: {fileID: 1654331870}
   prefab: {fileID: 7876162921344913273, guid: 72d2d9345c02c5241b0b12891f1600b3, type: 3}
+  _xrOrigin: {fileID: 471693682}
+  _gameObjectToPlace: {fileID: 7876162921344913273, guid: 72d2d9345c02c5241b0b12891f1600b3,
+    type: 3}
   audioClip: {fileID: 8300000, guid: e004f89ef7f289f4fa313f34877da7a0, type: 3}
   audioSource: {fileID: 1298900199}
 --- !u!4 &1298900201
