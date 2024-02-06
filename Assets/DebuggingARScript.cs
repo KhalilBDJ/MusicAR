@@ -13,7 +13,6 @@ public class DebuggingARScript : MonoBehaviour
     public AudioClip audioClip;
     public AudioSource audioSource;
 
-    // Utilisez une liste pour stocker les instances de l'image détectée
     private List<ARTrackedImage> trackedImageInstances = new List<ARTrackedImage>();
 
     void OnEnable() => m_TrackedImageManager.trackedImagesChanged += OnChanged;
@@ -30,7 +29,7 @@ public class DebuggingARScript : MonoBehaviour
 
         foreach (var updatedImage in eventArgs.updated)
         {
-            // Optionnellement, gérer les mises à jour spécifiques ici
+            // Gérer les mises à jour spécifiques ici, si nécessaire
         }
 
         foreach (var removedImage in eventArgs.removed)
@@ -41,7 +40,6 @@ public class DebuggingARScript : MonoBehaviour
 
     void TryPlacePrefabBetweenImages()
     {
-        // Assurez-vous qu'il y a exactement 2 instances de l'image détectée
         if (trackedImageInstances.Count == 2)
         {
             PlacePrefabBetweenImages(trackedImageInstances[0], trackedImageInstances[1]);
@@ -51,50 +49,39 @@ public class DebuggingARScript : MonoBehaviour
     void PlacePrefabBetweenImages(ARTrackedImage image1, ARTrackedImage image2)
     {
         Vector3 positionBetweenImages = (image1.transform.position + image2.transform.position) / 2;
-        Quaternion rotationBetweenImages = Quaternion.Lerp(image1.transform.rotation, image2.transform.rotation, 0.5f);
+        // Assurez-vous que l'objet est placé au même niveau Y que les images
+        positionBetweenImages.y = image1.transform.position.y; // ou une valeur spécifique si nécessaire
 
-        // Calcul de la largeur virtuelle nécessaire
         float distanceBetweenImages = Vector3.Distance(image1.transform.position, image2.transform.position);
+        Vector3 direction = (image2.transform.position - image1.transform.position).normalized;
+        Quaternion rotation = Quaternion.LookRotation(direction);
 
-        // Créer ou déplacer l'objet entre les images
-        InstantiateOrUpdatePrefab(positionBetweenImages, rotationBetweenImages, distanceBetweenImages);
+        InstantiateOrUpdatePrefab(positionBetweenImages, rotation, distanceBetweenImages);
     }
 
-    void InstantiateOrUpdatePrefab(Vector3 position, Quaternion rotation, float width)
+    void InstantiateOrUpdatePrefab(Vector3 position, Quaternion rotation, float distance)
     {
         audioSource.PlayOneShot(audioClip);
 
-        GameObject existingInstance = GameObject.FindGameObjectWithTag("ARObject"); // Assurez-vous que votre prefab a ce tag
+        GameObject existingInstance = GameObject.FindGameObjectWithTag("ARObject");
         if (existingInstance != null)
         {
             existingInstance.transform.position = position;
             existingInstance.transform.rotation = rotation;
-            AdjustScale(existingInstance, width); // Ajuster l'échelle ici
+            AdjustScale(existingInstance, distance);
         }
         else
         {
             existingInstance = Instantiate(prefab, position, rotation);
-            AdjustScale(existingInstance, width); // Ajuster l'échelle ici aussi
+            AdjustScale(existingInstance, distance);
         }
     }
 
-    void AdjustScale(GameObject obj, float width)
+    void AdjustScale(GameObject obj, float distance)
     {
-        // Ici, ajustez la largeur de l'objet pour qu'elle corresponde à la distance entre les images
-        // Cette étape dépend de la façon dont votre objet est structuré et de quelle dimension représente sa "largeur"
-        // Par exemple, si la largeur est sur l'axe X local de l'objet :
+        // Ajustez cette méthode pour modifier la taille de l'objet en fonction de la distance entre les images
         Vector3 newScale = obj.transform.localScale;
-        newScale.x = width; // Ajustez cette ligne selon la structure de votre objet
+        newScale.z = distance; // Ajustez cet axe selon l'orientation de votre objet
         obj.transform.localScale = newScale;
-    }
-
-    void Start()
-    {
-        
-    }
-
-    void Update()
-    {
-        
     }
 }

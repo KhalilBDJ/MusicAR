@@ -15407,6 +15407,8 @@ struct DebuggingARScript_tFB715164AB0F7880FD4DD7688EF083FC8A06C0E6  : public Mon
 	AudioClip_t5D272C4EB4F2D3ED49F1C346DEA373CF6D585F20* ___audioClip_6;
 	// UnityEngine.AudioSource DebuggingARScript::audioSource
 	AudioSource_t871AC2272F896738252F04EE949AEF5B241D3299* ___audioSource_7;
+	// System.Collections.Generic.List`1<UnityEngine.XR.ARFoundation.ARTrackedImage> DebuggingARScript::trackedImageInstances
+	List_1_tFA730335FF46512E4245B2F46892CA318B394FAE* ___trackedImageInstances_8;
 };
 
 // UnityEngine.EventSystems.EventTrigger
@@ -25362,9 +25364,9 @@ IL2CPP_EXTERN_C const int32_t g_FieldOffsetTable4485[2] =
 IL2CPP_EXTERN_C const int32_t g_FieldOffsetTable4486[3] = 
 {
 	static_cast<int32_t>(offsetof(GlyphPairAdjustmentRecord_t6E4295094D349DBF22BC59116FBC8F22EA55420E, ___m_FirstAdjustmentRecord_0)) + static_cast<int32_t>(sizeof(RuntimeObject)),static_cast<int32_t>(offsetof(GlyphPairAdjustmentRecord_t6E4295094D349DBF22BC59116FBC8F22EA55420E, ___m_SecondAdjustmentRecord_1)) + static_cast<int32_t>(sizeof(RuntimeObject)),static_cast<int32_t>(offsetof(GlyphPairAdjustmentRecord_t6E4295094D349DBF22BC59116FBC8F22EA55420E, ___m_FeatureLookupFlags_2)) + static_cast<int32_t>(sizeof(RuntimeObject)),};
-IL2CPP_EXTERN_C const int32_t g_FieldOffsetTable4488[4] = 
+IL2CPP_EXTERN_C const int32_t g_FieldOffsetTable4488[5] = 
 {
-	static_cast<int32_t>(offsetof(DebuggingARScript_tFB715164AB0F7880FD4DD7688EF083FC8A06C0E6, ___m_TrackedImageManager_4)),static_cast<int32_t>(offsetof(DebuggingARScript_tFB715164AB0F7880FD4DD7688EF083FC8A06C0E6, ___prefab_5)),static_cast<int32_t>(offsetof(DebuggingARScript_tFB715164AB0F7880FD4DD7688EF083FC8A06C0E6, ___audioClip_6)),static_cast<int32_t>(offsetof(DebuggingARScript_tFB715164AB0F7880FD4DD7688EF083FC8A06C0E6, ___audioSource_7)),};
+	static_cast<int32_t>(offsetof(DebuggingARScript_tFB715164AB0F7880FD4DD7688EF083FC8A06C0E6, ___m_TrackedImageManager_4)),static_cast<int32_t>(offsetof(DebuggingARScript_tFB715164AB0F7880FD4DD7688EF083FC8A06C0E6, ___prefab_5)),static_cast<int32_t>(offsetof(DebuggingARScript_tFB715164AB0F7880FD4DD7688EF083FC8A06C0E6, ___audioClip_6)),static_cast<int32_t>(offsetof(DebuggingARScript_tFB715164AB0F7880FD4DD7688EF083FC8A06C0E6, ___audioSource_7)),static_cast<int32_t>(offsetof(DebuggingARScript_tFB715164AB0F7880FD4DD7688EF083FC8A06C0E6, ___trackedImageInstances_8)),};
 IL2CPP_EXTERN_C const int32_t g_FieldOffsetTable4489[6] = 
 {
 	static_cast<int32_t>(offsetof(AnchorCreator_tBBEE94135B5183E0A8EE52FB00513F69C7C980ED, ___m_AnchorPrefab_4)),static_cast<int32_t>(offsetof(AnchorCreator_tBBEE94135B5183E0A8EE52FB00513F69C7C980ED_StaticFields, ___s_Hits_5)),static_cast<int32_t>(offsetof(AnchorCreator_tBBEE94135B5183E0A8EE52FB00513F69C7C980ED, ___m_AnchorPoints_6)),static_cast<int32_t>(offsetof(AnchorCreator_tBBEE94135B5183E0A8EE52FB00513F69C7C980ED, ___m_RaycastManager_7)),static_cast<int32_t>(offsetof(AnchorCreator_tBBEE94135B5183E0A8EE52FB00513F69C7C980ED, ___m_AnchorManager_8)),static_cast<int32_t>(offsetof(AnchorCreator_tBBEE94135B5183E0A8EE52FB00513F69C7C980ED, ___m_PlaneManager_9)),};
