@@ -51,39 +51,24 @@ public class DebuggingARScript : MonoBehaviour
 
     void PlacePrefabBetweenImages(ARTrackedImage image1, ARTrackedImage image2)
     {
-        //Vector3 positionBetweenImages = (image1.transform.position + image2.transform.position) / 2;
-        Vector3 positionBetweenImages = new Vector3();
-        
-        if (image1.transform.position.x>image2.transform.position.x)
-        {
-            positionBetweenImages = (new Vector3(image1.transform.position.x - image1.size.x / 2,
-                image1.transform.position.y, image1.transform.position.z) + new Vector3(
-                image2.transform.position.x + image2.size.x / 2,
-                image2.transform.position.y, image2.transform.position.z))/2;
-            
-        }
-        else
-        {
-            positionBetweenImages = (new Vector3(image1.transform.position.x + image1.size.x / 2,
-                image1.transform.position.y, image1.transform.position.z) + new Vector3(
-                image2.transform.position.x - image2.size.x / 2,
-                image2.transform.position.y, image2.transform.position.z))/2;
-        }
-     
-        float distanceBetweenImages = Vector3.Distance(image1.transform.position, image2.transform.position) -(image1.size.x/2 + image2.size.x/2 );
-        Vector3 direction = (image2.transform.position - image1.transform.position).normalized;
-        Quaternion rotation = Quaternion.LookRotation(direction);
+        Vector3 positionBetweenImages = (image1.transform.position + image2.transform.position) / 2;
 
-        InstantiateOrUpdatePrefab(positionBetweenImages, rotation, distanceBetweenImages);
-        //Instantiate(testObject, new Vector3(image1.transform.position.x - image1.size.x / 2,
-        //    image1.transform.position.y, image1.transform.position.z), Quaternion.identity);
+        // Calcul de la "moyenne" des rotations
+        Quaternion averageRotation = AverageQuaternion(image1.transform.rotation, image2.transform.rotation);
+
+        float distanceBetweenImages = Vector3.Distance(image1.transform.position, image2.transform.position) - (image1.size.x / 2 + image2.size.x / 2);
+        InstantiateOrUpdatePrefab(positionBetweenImages, averageRotation, distanceBetweenImages);
+    }
+
+    Quaternion AverageQuaternion(Quaternion q1, Quaternion q2)
+    {
+        return Quaternion.Slerp(q1, q2, 0.5f);
     }
 
     void InstantiateOrUpdatePrefab(Vector3 position, Quaternion rotation, float distance)
     {
         audioSource.PlayOneShot(audioClip);
 
-        
         GameObject existingInstance = GameObject.FindGameObjectWithTag("ARObject");
         if (existingInstance != null)
         {
@@ -101,7 +86,8 @@ public class DebuggingARScript : MonoBehaviour
     void AdjustScale(GameObject obj, float distance)
     {
         Vector3 newScale = obj.transform.localScale;
-        newScale.z = distance; 
+        newScale.z = distance; // Adjust the scale based on the distance
         obj.transform.localScale = newScale;
     }
+
 }
