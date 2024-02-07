@@ -11,7 +11,7 @@ public class DebuggingARScript : MonoBehaviour
 
     [SerializeField] private GameObject prefab;
     [SerializeField] private XROrigin _xrOrigin;
-    [SerializeField] private GameObject _gameObjectToPlace;
+    [SerializeField] private GameObject testObject;
 
     public AudioClip audioClip;
     public AudioSource audioSource;
@@ -53,14 +53,14 @@ public class DebuggingARScript : MonoBehaviour
     {
         //Vector3 positionBetweenImages = (image1.transform.position + image2.transform.position) / 2;
         Vector3 positionBetweenImages = new Vector3();
-        Instantiate(_gameObjectToPlace, new Vector3(image1.transform.position.x - image1.size.x / 2,
-            image1.transform.position.y, image1.transform.position.z), Quaternion.identity);
+        
         if (image1.transform.position.x>image2.transform.position.x)
         {
             positionBetweenImages = (new Vector3(image1.transform.position.x - image1.size.x / 2,
                 image1.transform.position.y, image1.transform.position.z) + new Vector3(
                 image2.transform.position.x + image2.size.x / 2,
                 image2.transform.position.y, image2.transform.position.z))/2;
+            
         }
         else
         {
@@ -75,12 +75,15 @@ public class DebuggingARScript : MonoBehaviour
         Quaternion rotation = Quaternion.LookRotation(direction);
 
         InstantiateOrUpdatePrefab(positionBetweenImages, rotation, distanceBetweenImages);
+        //Instantiate(testObject, new Vector3(image1.transform.position.x - image1.size.x / 2,
+        //    image1.transform.position.y, image1.transform.position.z), Quaternion.identity);
     }
 
     void InstantiateOrUpdatePrefab(Vector3 position, Quaternion rotation, float distance)
     {
         audioSource.PlayOneShot(audioClip);
 
+        
         GameObject existingInstance = GameObject.FindGameObjectWithTag("ARObject");
         if (existingInstance != null)
         {
