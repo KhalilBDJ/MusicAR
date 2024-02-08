@@ -180,6 +180,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 578656828}
   - {fileID: 1890402956}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -199,7 +200,7 @@ GameObject:
   - component: {fileID: 578656829}
   m_Layer: 0
   m_Name: Main Camera
-  m_TagString: Untagged
+  m_TagString: MainCamera
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -212,12 +213,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 578656827}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.1176, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1890402956}
+  m_Father: {fileID: 471693683}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &578656829
 MonoBehaviour:
@@ -535,7 +536,7 @@ PrefabInstance:
     - target: {fileID: 6119161535705803028, guid: 7abe8929ea61a7f4fbec8de0b16ab8e9,
         type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -568,7 +569,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1077598112
 Transform:
   m_ObjectHideFlags: 0
@@ -1311,6 +1312,7 @@ GameObject:
   - component: {fileID: 1298900200}
   - component: {fileID: 1298900199}
   - component: {fileID: 1298900202}
+  - component: {fileID: 1298900203}
   m_Layer: 0
   m_Name: Scripts
   m_TagString: Untagged
@@ -1329,13 +1331,13 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 24300002, guid: 3835f19220cc5854db7b549d3b225f75,
     type: 2}
-  m_audioClip: {fileID: 8300000, guid: e004f89ef7f289f4fa313f34877da7a0, type: 3}
-  m_Resource: {fileID: 8300000, guid: e004f89ef7f289f4fa313f34877da7a0, type: 3}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
   m_PlayOnAwake: 0
-  m_Volume: 1
+  m_Volume: 0.067
   m_Pitch: 1
   Loop: 0
-  Mute: 1
+  Mute: 0
   Spatialize: 0
   SpatializePostEffects: 0
   Priority: 128
@@ -1429,7 +1431,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_TrackedImageManager: {fileID: 1654331870}
-  prefab: {fileID: 841800456}
+  prefab: {fileID: 2028030085638216747, guid: 1b09b34a8099a454c929f6bf91ab5997, type: 3}
   _xrOrigin: {fileID: 471693682}
   testObject: {fileID: 841800456}
   audioClip: {fileID: 8300000, guid: e004f89ef7f289f4fa313f34877da7a0, type: 3}
@@ -1465,8 +1467,32 @@ MonoBehaviour:
     type: 3}
   sharpNotePrefab: {fileID: 1559006345670711082, guid: 79ca0178643911c46a5b589bea30a614,
     type: 3}
-  pianoGameObject: {fileID: 841800456}
+  pianoGameObject: {fileID: 2028030085638216747, guid: 1b09b34a8099a454c929f6bf91ab5997,
+    type: 3}
   initialPoolSize: 200
+--- !u!114 &1298900203
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1298900198}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: db37ba85e118a7149a5d884c6e227589, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  rmsValue: 0
+  dbValue: 0
+  pitchValue: 0
+  source: {fileID: 1298900199}
+  qSamples: 1024
+  binSize: 8192
+  refValue: 0.1
+  test: {fileID: 8300000, guid: 69e757ed84b1e1142bd2cc4c5cfe5109, type: 3}
+  mute: 1
+  masterMixer: {fileID: 24100000, guid: 3835f19220cc5854db7b549d3b225f75, type: 2}
+  pianoKeyPool: {fileID: 1298900202}
 --- !u!1 &1355046578
 GameObject:
   m_ObjectHideFlags: 0
@@ -1533,7 +1559,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1440530186
 Transform:
   m_ObjectHideFlags: 0
@@ -2295,7 +2321,6 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 578656828}
   - {fileID: 1440530186}
   - {fileID: 1077598112}
   m_Father: {fileID: 471693683}

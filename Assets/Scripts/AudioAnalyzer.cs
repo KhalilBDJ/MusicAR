@@ -18,7 +18,7 @@ public class AudioAnalyzer : MonoBehaviour
     public AudioSource source;
 
     public int qSamples = 1024;
-    public int binSize = 16384;
+    public int binSize = 8192;
     public float refValue = 0.1f;
     public AudioClip test;
 
@@ -27,7 +27,7 @@ public class AudioAnalyzer : MonoBehaviour
     float[] spectrum;
     int samplerate;
 
-    public TMP_Text display;
+    //public TMP_Text display;
     public bool mute = true;
     public AudioMixer masterMixer;
 

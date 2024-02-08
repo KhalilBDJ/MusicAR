@@ -53,11 +53,18 @@ public class DebuggingARScript : MonoBehaviour
     {
         Vector3 positionBetweenImages = (image1.transform.position + image2.transform.position) / 2;
 
-        // Calcul de la "moyenne" des rotations
-        Quaternion averageRotation = AverageQuaternion(image1.transform.rotation, image2.transform.rotation);
+        if (image1.transform.position.x > image2.transform.position.x)
+        {
+            positionBetweenImages.x = image2.transform.position.x + image2.size.x / 2;
+
+        }
+        else
+        {
+            positionBetweenImages.x = image1.transform.position.x + image2.size.x / 2;
+        }
 
         float distanceBetweenImages = Vector3.Distance(image1.transform.position, image2.transform.position) - (image1.size.x / 2 + image2.size.x / 2);
-        InstantiateOrUpdatePrefab(positionBetweenImages, averageRotation, distanceBetweenImages);
+        InstantiateOrUpdatePrefab(positionBetweenImages, Quaternion.identity, distanceBetweenImages);
     }
 
     Quaternion AverageQuaternion(Quaternion q1, Quaternion q2)
@@ -68,8 +75,9 @@ public class DebuggingARScript : MonoBehaviour
     void InstantiateOrUpdatePrefab(Vector3 position, Quaternion rotation, float distance)
     {
         audioSource.PlayOneShot(audioClip);
-
+    
         GameObject existingInstance = GameObject.FindGameObjectWithTag("ARObject");
+
         if (existingInstance != null)
         {
             existingInstance.transform.position = position;
@@ -78,7 +86,7 @@ public class DebuggingARScript : MonoBehaviour
         }
         else
         {
-            existingInstance = Instantiate(prefab, position, rotation, _xrOrigin.transform);
+            existingInstance = Instantiate(prefab, position, rotation);
             AdjustScale(existingInstance, distance);
         }
     }
@@ -86,7 +94,8 @@ public class DebuggingARScript : MonoBehaviour
     void AdjustScale(GameObject obj, float distance)
     {
         Vector3 newScale = obj.transform.localScale;
-        newScale.z = distance; // Adjust the scale based on the distance
+     
+        newScale.x = distance;
         obj.transform.localScale = newScale;
     }
 

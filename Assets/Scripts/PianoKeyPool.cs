@@ -19,6 +19,7 @@ public class PianoKeyPool : MonoBehaviour
     private float _blackKeyWidth;
     private float _currentXPosition;
     private float _parentHeight;
+    private bool _isInstatiated;
 
     private readonly Dictionary<string, float> _notePositions = new Dictionary<string, float>();
     private readonly string[] _names = {
@@ -41,22 +42,37 @@ public class PianoKeyPool : MonoBehaviour
 
     private void Awake()
     {
-        Debug.Log(_names.Length);
-        Debug.Log(pianoGameObject.GetComponent<MeshRenderer>().bounds.size.x);
-        _whiteKeyWidth = pianoGameObject.GetComponent<Transform>().localScale.x / 52;
-        _blackKeyWidth = _whiteKeyWidth / 2;
-        _currentXPosition = pianoGameObject.GetComponent<Transform>().localScale.x  / 2 - _blackKeyWidth;
-        _noteNames = new List<string>(_names);
-        InitializePool(_sharpNotesPool, sharpNotePrefab, initialPoolSize);
-        InitializePool(_naturalNotesPool, naturalNotePrefab, initialPoolSize);
-        InitializeNotePositions();
+        _isInstatiated = false;
+      
+    }
+
+    private void Update()
+    {
+        if (GameObject.FindGameObjectWithTag("ARObject") && _isInstatiated == false) 
+        {
+            Debug.Log(_names.Length);
+            pianoGameObject = GameObject.FindGameObjectWithTag("ARObject");
+            //Debug.Log(pianoGameObject.GetComponent<MeshRenderer>().bounds.size.x);
+            _whiteKeyWidth = pianoGameObject.GetComponentInChildren<MeshRenderer>().bounds.size.x / 52;
+            _blackKeyWidth = _whiteKeyWidth / 2;
+            _currentXPosition = pianoGameObject.GetComponentInChildren<MeshRenderer>().bounds.size.x  / 2 - _blackKeyWidth;
+            _noteNames = new List<string>(_names);
+            InitializePool(_sharpNotesPool, sharpNotePrefab, initialPoolSize);
+            InitializePool(_naturalNotesPool, naturalNotePrefab, initialPoolSize);
+            InitializeNotePositions();
         
 
-        Debug.Log(pianoGameObject.GetComponentInParent<Transform>().name);
-        Debug.Log(GetComponentInParent<Transform>().name);
-        _parentHeight = pianoGameObject.GetComponentInParent<MeshRenderer>().bounds.size.y;
+            /*Debug.Log(pianoGameObject.GetComponentInParent<Transform>().name);
+            Debug.Log(GetComponentInParent<Transform>().name);*/
+            _parentHeight = pianoGameObject.GetComponentInChildren<MeshRenderer>().bounds.size.y;
+            _isInstatiated = true;
+        }
+        else
+        {
+            Debug.Log("HUGOOOOOOOOOOOOOOOOOOOOOO");
+        }
     }
-    
+
     private void InitializePool(Queue<GameObject> pool, GameObject prefab, int size)
     {
         for (int i = 0; i < size; i++)
