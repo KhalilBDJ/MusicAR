@@ -23,8 +23,8 @@ MonoBehaviour:
     m_SerializedTextureGuid:
       m_GuidLow: 13151730972082993156
       m_GuidHigh: 17646675022162491466
-    m_Size: {x: 0, y: 0}
-    m_SpecifySize: 0
+    m_Size: {x: 0.16, y: 0.22802101}
+    m_SpecifySize: 1
     m_Name: Kawa
     m_Texture: {fileID: 0}
   - m_SerializedGuid:
@@ -33,7 +33,7 @@ MonoBehaviour:
     m_SerializedTextureGuid:
       m_GuidLow: 12949002556574425658
       m_GuidHigh: 18278290671418046123
-    m_Size: {x: 0, y: 0}
-    m_SpecifySize: 0
+    m_Size: {x: 16, y: 16}
+    m_SpecifySize: 1
     m_Name: Mario-PNG-Image
     m_Texture: {fileID: 0}

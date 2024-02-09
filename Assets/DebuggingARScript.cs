@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.XR.CoreUtils;
@@ -32,13 +33,17 @@ public class DebuggingARScript : MonoBehaviour
 
         foreach (var updatedImage in eventArgs.updated)
         {
-            // Gérer les mises à jour spécifiques ici, si nécessaire
-        }
+            TryPlacePrefabBetweenImages();        }
 
         foreach (var removedImage in eventArgs.removed)
         {
             trackedImageInstances.Remove(removedImage);
         }
+    }
+
+    private void Update()
+    {
+        //TryPlacePrefabBetweenImages();
     }
 
     void TryPlacePrefabBetweenImages()
@@ -64,7 +69,7 @@ public class DebuggingARScript : MonoBehaviour
         }
 
         float distanceBetweenImages = Vector3.Distance(image1.transform.position, image2.transform.position) - (image1.size.x / 2 + image2.size.x / 2);
-        InstantiateOrUpdatePrefab(positionBetweenImages, Quaternion.identity, distanceBetweenImages);
+        InstantiateOrUpdatePrefab(positionBetweenImages, Quaternion.Euler(90, 0, 0), distanceBetweenImages);
     }
 
     Quaternion AverageQuaternion(Quaternion q1, Quaternion q2)
@@ -74,8 +79,7 @@ public class DebuggingARScript : MonoBehaviour
 
     void InstantiateOrUpdatePrefab(Vector3 position, Quaternion rotation, float distance)
     {
-        audioSource.PlayOneShot(audioClip);
-    
+        //audioSource.PlayOneShot(audioClip);
         GameObject existingInstance = GameObject.FindGameObjectWithTag("ARObject");
 
         if (existingInstance != null)
