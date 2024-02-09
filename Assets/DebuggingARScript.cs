@@ -33,9 +33,10 @@ public class DebuggingARScript : MonoBehaviour
 
         foreach (var updatedImage in eventArgs.updated)
         {
-            TryPlacePrefabBetweenImages();        }
-
-        foreach (var removedImage in eventArgs.removed)
+    //        TryPlacePrefabBetweenImages();
+        }
+    
+    foreach (var removedImage in eventArgs.removed)
         {
             trackedImageInstances.Remove(removedImage);
         }
@@ -43,7 +44,7 @@ public class DebuggingARScript : MonoBehaviour
 
     private void Update()
     {
-        //TryPlacePrefabBetweenImages();
+        TryPlacePrefabBetweenImages();
     }
 
     void TryPlacePrefabBetweenImages()
@@ -69,6 +70,7 @@ public class DebuggingARScript : MonoBehaviour
         }
 
         float distanceBetweenImages = Vector3.Distance(image1.transform.position, image2.transform.position) - (image1.size.x / 2 + image2.size.x / 2);
+        Debug.Log("la distance entre les deux images est: " + distanceBetweenImages);
         InstantiateOrUpdatePrefab(positionBetweenImages, Quaternion.Euler(90, 0, 0), distanceBetweenImages);
     }
 
