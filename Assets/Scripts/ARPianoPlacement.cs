@@ -8,20 +8,12 @@ public class ARPianoPlacement : MonoBehaviour
     
     [SerializeField]
     ARTrackedImageManager m_TrackedImageManager;
-    
+
+    [SerializeField] private GameObject piano;
+
+    private GameObject currentPiano;
     private List<ARTrackedImage> trackedImageInstances = new List<ARTrackedImage>();
-
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
+    
     
     void OnEnable() => m_TrackedImageManager.trackedImagesChanged += OnChanged;
 
@@ -32,6 +24,7 @@ public class ARPianoPlacement : MonoBehaviour
         foreach (var newImage in eventArgs.added)
         {
             trackedImageInstances.Add(newImage);
+            TryPlacingObject(newImage);
         }
 
         foreach (var updatedImage in eventArgs.updated)
@@ -41,6 +34,30 @@ public class ARPianoPlacement : MonoBehaviour
         foreach (var removedImage in eventArgs.removed)
         {
             trackedImageInstances.Remove(removedImage);
+        }
+    }
+
+    void TryPlacingObject(ARTrackedImage image)
+    {
+        currentPiano = Instantiate(piano, image.transform);
+    }
+
+    public void MovePiano(string direction)
+    {
+        switch (direction)
+        {
+            case "UP":
+                currentPiano.transform.position += new Vector3(0, 0.1f, 0); 
+                break;
+            case "DOWN":
+                currentPiano.transform.position += new Vector3(0, -0.1f, 0);
+                break;
+            case "LEFT":
+                currentPiano.transform.position += new Vector3(-0.1f, 0, 0);
+                break;
+            case "RIGHT":
+                currentPiano.transform.position += new Vector3(0.1f, 0, 0); 
+                break;
         }
     }
 }
