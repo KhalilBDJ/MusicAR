@@ -39,7 +39,7 @@ public class ARPianoPlacement : MonoBehaviour
 
     void TryPlacingObject(ARTrackedImage image)
     {
-        currentPiano = Instantiate(piano, image.transform);
+        currentPiano = Instantiate(piano,new Vector3(image.transform.position.x - image.size.x, image.transform.position.y - image.size.y, image.transform.position.z),Quaternion.Euler(90, 0, 0), image.transform);
     }
 
     public void MovePiano(string direction)
@@ -47,22 +47,28 @@ public class ARPianoPlacement : MonoBehaviour
         switch (direction)
         {
             case "UP":
-                currentPiano.transform.position += new Vector3(0, 0.1f, 0); 
+                currentPiano.transform.position += new Vector3(0, 0.05f, 0); 
                 break;
             case "DOWN":
-                currentPiano.transform.position += new Vector3(0, -0.1f, 0);
+                currentPiano.transform.position += new Vector3(0, -0.05f, 0);
                 break;
             case "LEFT":
-                currentPiano.transform.position += new Vector3(-0.1f, 0, 0);
+                currentPiano.transform.position += new Vector3(-0.05f, 0, 0);
                 break;
             case "RIGHT":
-                currentPiano.transform.position += new Vector3(0.1f, 0, 0); 
+                currentPiano.transform.position += new Vector3(0.05f, 0, 0); 
                 break;
             case "FORWARD":
-                currentPiano.transform.position += new Vector3(0f, 0, 0.1f); 
+                currentPiano.transform.position += new Vector3(0f, 0, 0.05f); 
                 break;
             case "BACKWARD":
-                currentPiano.transform.position += new Vector3(0f, 0, -0.1f); 
+                currentPiano.transform.position += new Vector3(0f, 0, -0.05f); 
+                break;
+            case "BIGGER":
+                currentPiano.transform.localScale += new Vector3(0.05f, 0.05f, 0f);
+                break;
+            case "SMALLER":
+                currentPiano.transform.localScale += new Vector3(-0.05f, -0.05f, 0f);
                 break;
 
 
