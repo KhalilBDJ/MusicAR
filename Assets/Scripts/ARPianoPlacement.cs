@@ -58,6 +58,14 @@ public class ARPianoPlacement : MonoBehaviour
             case "RIGHT":
                 currentPiano.transform.position += new Vector3(0.1f, 0, 0); 
                 break;
+            case "FORWARD":
+                currentPiano.transform.position += new Vector3(0f, 0, 0.1f); 
+                break;
+            case "BACKWARD":
+                currentPiano.transform.position += new Vector3(0f, 0, -0.1f); 
+                break;
+
+
         }
     }
 }
