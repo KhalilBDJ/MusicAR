@@ -2,19 +2,22 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.XR.ARFoundation;
+using UnityEngine.XR.ARSubsystems;
 
 public class ARPianoPlacement : MonoBehaviour
 {
-    
     [SerializeField]
-    ARTrackedImageManager m_TrackedImageManager;
+    private ARTrackedImageManager m_TrackedImageManager;
 
-    [SerializeField] private GameObject piano;
+    [SerializeField]
+    private ARAnchorManager m_AnchorManager;
+
+    [SerializeField]
+    private GameObject piano;
 
     private GameObject currentPiano;
     private List<ARTrackedImage> trackedImageInstances = new List<ARTrackedImage>();
-    
-    
+
     void OnEnable() => m_TrackedImageManager.trackedImagesChanged += OnChanged;
 
     void OnDisable() => m_TrackedImageManager.trackedImagesChanged -= OnChanged;
@@ -30,7 +33,7 @@ public class ARPianoPlacement : MonoBehaviour
         foreach (var updatedImage in eventArgs.updated)
         {
         }
-    
+
         foreach (var removedImage in eventArgs.removed)
         {
             trackedImageInstances.Remove(removedImage);
@@ -39,7 +42,18 @@ public class ARPianoPlacement : MonoBehaviour
 
     void TryPlacingObject(ARTrackedImage image)
     {
-        currentPiano = Instantiate(piano,new Vector3(image.transform.position.x - image.size.x, image.transform.position.y - image.size.y, image.transform.position.z),Quaternion.Euler(90, 0, 0), image.transform);
+        StartCoroutine(PlaceObjectWithDelay(image, 2f)); // Lance une coroutine avec un délai de 2 secondes
+    }
+
+    IEnumerator PlaceObjectWithDelay(ARTrackedImage image, float delay)
+    {
+        yield return new WaitForSeconds(delay); // Attend pendant le délai spécifié
+
+        ARAnchor anchor = m_AnchorManager.AddAnchor(new Pose(image.transform.position, Quaternion.Euler(0, 0, 0)));
+        if (anchor != null)
+        {
+            currentPiano = Instantiate(piano, new Vector3(anchor.transform.position.x, anchor.transform.position.y, anchor.transform.position.z), Quaternion.Euler(0, 0, 0), anchor.transform);
+        }
     }
 
     public void MovePiano(string direction)
@@ -59,19 +73,17 @@ public class ARPianoPlacement : MonoBehaviour
                 currentPiano.transform.position += new Vector3(0.05f, 0, 0); 
                 break;
             case "FORWARD":
-                currentPiano.transform.position += new Vector3(0f, 0, 0.05f); 
+                currentPiano.transform.position += new Vector3(0, 0, 0.05f); 
                 break;
             case "BACKWARD":
-                currentPiano.transform.position += new Vector3(0f, 0, -0.05f); 
+                currentPiano.transform.position += new Vector3(0, 0, -0.05f); 
                 break;
             case "BIGGER":
-                currentPiano.transform.localScale += new Vector3(0.05f, 0.05f, 0f);
+                currentPiano.transform.localScale += new Vector3(0.05f, 0.05f, 0.05f);
                 break;
             case "SMALLER":
-                currentPiano.transform.localScale += new Vector3(-0.05f, -0.05f, 0f);
+                currentPiano.transform.localScale += new Vector3(-0.05f, -0.05f, -0.05f);
                 break;
-
-
         }
     }
 }

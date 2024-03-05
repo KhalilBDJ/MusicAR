@@ -11,9 +11,12 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Scenes/SandBox.unity
     guid: 5bd8b804c61f320439716c27eb2f31f6
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/XRSandboxScene.unity
     guid: debe6b1de432ba3489a9d1c610d4fb93
+  - enabled: 1
+    path: Assets/Scenes/AdjustementPianoScene.unity
+    guid: cb1f9ff7692c3cb49a5c9a6fbd11fd38
   m_configObjects:
     Unity.XR.WindowsMR.Settings: {fileID: 11400000, guid: 744b813df90924c169af73489b8325de,
       type: 2}

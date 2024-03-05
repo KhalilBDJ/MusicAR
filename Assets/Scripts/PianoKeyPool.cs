@@ -55,7 +55,7 @@ public class PianoKeyPool : MonoBehaviour
             //Debug.Log(pianoGameObject.GetComponent<MeshRenderer>().bounds.size.x);
             _whiteKeyWidth = pianoGameObject.GetComponentInChildren<MeshRenderer>().bounds.size.x / 52;
             _blackKeyWidth = _whiteKeyWidth / 2;
-            _currentXPosition = pianoGameObject.GetComponentInChildren<MeshRenderer>().bounds.size.x  / 2 - _blackKeyWidth;
+            _currentXPosition = _blackKeyWidth;
             _noteNames = new List<string>(_names);
             InitializePool(_sharpNotesPool, sharpNotePrefab, initialPoolSize);
             InitializePool(_naturalNotesPool, naturalNotePrefab, initialPoolSize);
@@ -65,11 +65,15 @@ public class PianoKeyPool : MonoBehaviour
             /*Debug.Log(pianoGameObject.GetComponentInParent<Transform>().name);
             Debug.Log(GetComponentInParent<Transform>().name);*/
             _parentHeight = pianoGameObject.GetComponentInChildren<MeshRenderer>().bounds.size.y;
+            foreach (var note in _names)
+            {
+                GetNoteObject(note);
+            }
             _isInstatiated = true;
         }
         else
         {
-            //Debug.Log("HUGOOOOOOOOOOOOOOOOOOOOOO");
+            Debug.Log("HUGOOOOOOOOOOOOOOOOOOOOOO");
         }
     }
 
@@ -77,7 +81,7 @@ public class PianoKeyPool : MonoBehaviour
     {
         for (int i = 0; i < size; i++)
         {
-            GameObject noteObject = Instantiate(prefab, pianoGameObject.transform, true);
+            GameObject noteObject = Instantiate(prefab,pianoGameObject.transform);
             noteObject.SetActive(false);
             pool.Enqueue(noteObject);
         }
@@ -94,14 +98,14 @@ public class PianoKeyPool : MonoBehaviour
             if (isWhiteKey)
             {
                 _notePositions[note] = _currentXPosition;
-                _currentXPosition -= _whiteKeyWidth;
+                _currentXPosition += _whiteKeyWidth;
                 isPrevKeyWhite = true;
             }
             else
             {
                 // Si la touche précédente était blanche, on place la touche noire à une demi-largeur de la touche blanche précédente
-                float offset = isPrevKeyWhite ? -_blackKeyWidth : 0;
-                _notePositions[note] = (_currentXPosition - offset);
+                float offset = isPrevKeyWhite ? + _blackKeyWidth : 0;
+                _notePositions[note] = (_currentXPosition + offset);
                 isPrevKeyWhite = false;
             }
         }
@@ -115,14 +119,14 @@ public class PianoKeyPool : MonoBehaviour
             if (noteName.Contains("#"))
             {
                 noteObject = GetObjectFromPool(_sharpNotesPool, sharpNotePrefab);
-                noteObject.transform.localScale = new Vector3(_blackKeyWidth, 1, 1);
+                noteObject.transform.localScale = new Vector3(_blackKeyWidth, 1, 0.01f);
                 noteObject.transform.localPosition = new Vector3(_notePositions[noteName] ,0, - _parentHeight/2 );
 
             }
             else
             {
                 noteObject = GetObjectFromPool(_naturalNotesPool, naturalNotePrefab);
-                noteObject.transform.localScale = new Vector3(_whiteKeyWidth, 1, 1);
+                noteObject.transform.localScale = new Vector3(_whiteKeyWidth, 1, 0.01f);
                 noteObject.transform.localPosition = new Vector3(_notePositions[noteName] ,0, - _parentHeight/2 );
             }
             noteObject.name = noteName;

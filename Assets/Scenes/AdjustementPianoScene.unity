@@ -1055,6 +1055,7 @@ GameObject:
   - component: {fileID: 623858875}
   - component: {fileID: 623858874}
   - component: {fileID: 623858873}
+  - component: {fileID: 623858878}
   m_Layer: 0
   m_Name: AR Session
   m_TagString: Untagged
@@ -1137,6 +1138,19 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &623858878
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 623858872}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 728ad7fae8e460a4ba41265c7308d757, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_AnchorPrefab: {fileID: 0}
 --- !u!1 &804012700
 GameObject:
   m_ObjectHideFlags: 0
@@ -1279,6 +1293,8 @@ GameObject:
   m_Component:
   - component: {fileID: 959509238}
   - component: {fileID: 959509237}
+  - component: {fileID: 959509239}
+  - component: {fileID: 959509240}
   m_Layer: 0
   m_Name: Scripts
   m_TagString: Untagged
@@ -1299,6 +1315,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_TrackedImageManager: {fileID: 623858873}
+  m_AnchorManager: {fileID: 623858878}
   piano: {fileID: 2028030085638216747, guid: 1b09b34a8099a454c929f6bf91ab5997, type: 3}
 --- !u!4 &959509238
 Transform:
@@ -1309,12 +1326,46 @@ Transform:
   m_GameObject: {fileID: 959509236}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1866.5043, y: 643.9021, z: -269.6847}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &959509239
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 959509236}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4094a7cc88a7914a88fa539327b91b2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  BPM: 120
+  xmlFilePath: C:\Users\khalil.bedjaoui\Downloads\score.xml
+  pianoKeyPool: {fileID: 959509240}
+--- !u!114 &959509240
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 959509236}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbfdf7c5041805d4e9c2f586ec5f87f7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  naturalNotePrefab: {fileID: 7355207133196070735, guid: 6bcb75d4e57598f46aa251faf6d691b3,
+    type: 3}
+  sharpNotePrefab: {fileID: 1559006345670711082, guid: 79ca0178643911c46a5b589bea30a614,
+    type: 3}
+  pianoGameObject: {fileID: 2028030085638216747, guid: 1b09b34a8099a454c929f6bf91ab5997,
+    type: 3}
+  initialPoolSize: 200
 --- !u!1 &1156893772
 GameObject:
   m_ObjectHideFlags: 0

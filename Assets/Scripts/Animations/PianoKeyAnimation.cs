@@ -3,7 +3,7 @@ using UnityEngine;
 public class PianoKeyAnimation : MonoBehaviour
 {
     public float growthRate = 1f;
-    public float moveRate = 0.1f;
+    private float moveRate = 0.3f;
     public string noteName;  // Ajouté pour stocker le nom de la note
 
     private bool isPlaying;
