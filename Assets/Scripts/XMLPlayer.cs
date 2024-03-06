@@ -6,7 +6,7 @@ using symbol;
 
 public class XMLPlayer : MonoBehaviour
 {
-    public int BPM = 120; // Le BPM de la pièce musicale
+    public int BPM = 60; // Le BPM de la pièce musicale
     public string xmlFilePath; // Chemin vers le fichier MusicXML
     public PianoKeyPool pianoKeyPool; // Référence au pool de touches de piano
 
@@ -42,31 +42,30 @@ public class XMLPlayer : MonoBehaviour
 
 
     IEnumerator PlayMusic()
+{
+    List<Measure> measures = xmlFacade.GetMeasureList(); // Obtenir la liste des mesures à partir du XML
+    float secondsPerBeat = 60f / BPM; // Calculer le temps par battement en secondes
+
+    foreach (Measure measure in measures)
     {
-        List<Measure> measures = xmlFacade.GetMeasureList(); // Obtenir la liste des mesures à partir du XML
-        float secondsPerBeat = 60f / BPM; // Calculer le temps par battement en secondes
-
-        foreach (Measure measure in measures)
+        foreach (List<List<Symbol>> symbolSet in measure.GetMeasureSymbolList()) // Parcourir chaque groupe de symboles dans la mesure
         {
-            foreach (List<List<Symbol>> symbolSet in measure.GetMeasureSymbolList()) // Parcourir chaque groupe de symboles dans la mesure
+            foreach (List<Symbol> symbolList in symbolSet) // Chaque main, droite et gauche
             {
-                foreach (List<Symbol> symbolList in symbolSet) // Chaque main, droite et gauche
+                foreach (Symbol symbol in symbolList) // Chaque symbole/note dans la main
                 {
-                    foreach (Symbol symbol in symbolList) // Chaque symbole/note dans la main
+                    if (symbol is Note)
                     {
-                        if (symbol is Note)
+                        Note note = (Note)symbol;
+                        // Jouer la note principale (et potentiellement le début de l'accord)
+                        PlayNoteInAnimation(note);
+
+                        // Gérer les autres notes de l'accord, si présentes
+                        if (note.HasChord())
                         {
-                            Note note = (Note)symbol;
-                            string noteName = note.GetStep() + note.GetOctave(); // Construire le nom de la note
-
-                            GameObject noteObject = pianoKeyPool.GetNoteObject(noteName); // Obtenir un objet de note du pool
-                            if (noteObject != null)
+                            foreach (Note chordNote in note.GetChordList())
                             {
-                                PianoKeyAnimation keyAnimation = noteObject.GetComponent<PianoKeyAnimation>();
-                                keyAnimation.PlayNote(noteName); // Jouer la note
-
-                                float duration = secondsPerBeat * (4f / note.GetType()); // Calculer la durée de la note en secondes
-                                StartCoroutine(StopNoteAfterDelay(keyAnimation, duration)); // Planifier l'arrêt de la note
+                                PlayNoteInAnimation(chordNote);
                             }
                         }
 
@@ -76,6 +75,30 @@ public class XMLPlayer : MonoBehaviour
             }
         }
     }
+}
+
+void PlayNoteInAnimation(Note note)
+{
+    // Construire le nom de la note en tenant compte des accords et des altérations
+    string noteName = note.GetStep();
+    if (!string.IsNullOrEmpty(note.GetAccidental()))
+    {
+        if (note.GetAccidental() == "sharp") noteName += "#";
+        else if (note.GetAccidental() == "flat") noteName += "b";
+        // Gérer d'autres altérations si nécessaire
+    }
+    noteName += note.GetOctave();
+
+    GameObject noteObject = pianoKeyPool.GetNoteObject(noteName); // Obtenir un objet de note du pool
+    if (noteObject != null)
+    {
+        PianoKeyAnimation keyAnimation = noteObject.GetComponent<PianoKeyAnimation>();
+
+        float duration = 60f / BPM * (4f / note.GetType()); // Calculer la durée de la note en secondes
+        keyAnimation.PlayNote(noteName, duration); // Jouer la note
+    }
+}
+
 
     IEnumerator StopNoteAfterDelay(PianoKeyAnimation keyAnimation, float delay)
     {
