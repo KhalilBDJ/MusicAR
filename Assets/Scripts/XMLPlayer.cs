@@ -11,10 +11,14 @@ public class XMLPlayer : MonoBehaviour
     public PianoKeyPool pianoKeyPool; // Référence au pool de touches de piano
 
     private XmlFacade xmlFacade; // Facade pour accéder aux données XML
+    private List<Measure> measures = new List<Measure>();
     
     
     void Start()
     {
+        
+        xmlFacade = new XmlFacade(xmlFilePath);
+        measures = xmlFacade.GetMeasureList(); // Obtenir la liste des mesures à partir du XML
         StartCoroutine(WaitForARObjectInitialization());
     }
 
@@ -31,7 +35,6 @@ public class XMLPlayer : MonoBehaviour
         if (pianoKeyPool != null)
         {
             // Initialiser XmlFacade et commencer à jouer la musique
-            xmlFacade = new XmlFacade(xmlFilePath);
             StartCoroutine(PlayMusic());
         }
         else
@@ -43,7 +46,6 @@ public class XMLPlayer : MonoBehaviour
 
     IEnumerator PlayMusic()
 {
-    List<Measure> measures = xmlFacade.GetMeasureList(); // Obtenir la liste des mesures à partir du XML
     float secondsPerBeat = 60f / BPM; // Calculer le temps par battement en secondes
 
     foreach (Measure measure in measures)
@@ -95,7 +97,7 @@ void PlayNoteInAnimation(Note note)
         PianoKeyAnimation keyAnimation = noteObject.GetComponent<PianoKeyAnimation>();
 
         float duration = 60f / BPM * (4f / note.GetType()); // Calculer la durée de la note en secondes
-        keyAnimation.PlayNote(noteName, duration); // Jouer la note
+        keyAnimation.PlayNote(noteName, duration - 0.1f); // Jouer la note
     }
 }
 

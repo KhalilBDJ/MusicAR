@@ -383,26 +383,46 @@ namespace xmlParser
                 List<Symbol> highList = new List<Symbol>();
                 List<Symbol> lowList = new List<Symbol>();
 
-                highList.Add(_highSymbolMeasure[i]);
-                tempHighDuration += _highSymbolMeasure[i].GetDuration();
-                i++;
-                lowList.Add(_lowSymbolMeasure[j]);
-                tempLowDuration += _lowSymbolMeasure[j].GetDuration();
-                j++;
+                if (i < _highSymbolMeasure.Count)
+                {
+                    highList.Add(_highSymbolMeasure[i]);
+                    tempHighDuration += _highSymbolMeasure[i].GetDuration();
+                    i++;
+                }
+                if (j < _lowSymbolMeasure.Count)
+                {
+                    lowList.Add(_lowSymbolMeasure[j]);
+                    tempLowDuration += _lowSymbolMeasure[j].GetDuration();
+                    j++;
+                }
 
                 while (tempHighDuration != tempLowDuration)
                 {
                     if (tempHighDuration > tempLowDuration)
                     {
-                        lowList.Add(_lowSymbolMeasure[j]);
-                        tempLowDuration += _lowSymbolMeasure[j].GetDuration();
-                        j++;
+                        if (j < _lowSymbolMeasure.Count)
+                        {
+                            lowList.Add(_lowSymbolMeasure[j]);
+                            tempLowDuration += _lowSymbolMeasure[j].GetDuration();
+                            j++;
+                        }
+                        else
+                        {
+                            break;
+                        }
                     }
                     else if (tempHighDuration < tempLowDuration)
                     {
-                        highList.Add(_highSymbolMeasure[i]);
-                        tempHighDuration += _highSymbolMeasure[i].GetDuration();
-                        i++;
+                        if (i < _highSymbolMeasure.Count)
+                        {
+                            highList.Add(_highSymbolMeasure[i]);
+                            tempHighDuration += _highSymbolMeasure[i].GetDuration();
+                            i++;
+                        }
+                        else
+                        {
+                            break;
+                        }
                     }
                 }
                 setList.Add(highList);

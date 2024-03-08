@@ -41,9 +41,8 @@ public class PianoKeyPool : MonoBehaviour
 
     private void Update()
     {
-        if (GameObject.FindGameObjectWithTag("ARObject") && _isInstatiated == false) 
+        if (GameObject.FindGameObjectWithTag("ARObject") && !_isInstatiated) 
         {
-            Debug.Log(_names.Length);
             pianoGameObject = GameObject.FindGameObjectWithTag("ARObject");
             _whiteKeyWidth = pianoGameObject.GetComponentInChildren<MeshRenderer>().bounds.size.x / 52;
             _blackKeyWidth = _whiteKeyWidth / 2;
@@ -82,7 +81,7 @@ public class PianoKeyPool : MonoBehaviour
             else
             {
                 float offset = isPrevKeyWhite ? + _blackKeyWidth : 0;
-                _notePositions[note] = (_currentXPosition + offset);
+                _notePositions[note] = _currentXPosition - offset;
                 isPrevKeyWhite = false;
             }
         }
@@ -90,26 +89,26 @@ public class PianoKeyPool : MonoBehaviour
     
     public GameObject GetNoteObject(string noteName)
     {
-        if (_flatToSharpNotes.ContainsKey(noteName))
+        string noteBase = noteName.Substring(0, noteName.Length - 1);
+        string octave = noteName.Substring(noteName.Length - 1);
+        if (_flatToSharpNotes.ContainsKey(noteBase))
         {
-            noteName = _flatToSharpNotes[noteName];
+            noteName = _flatToSharpNotes[noteBase] + octave;
         }
 
         GameObject noteObject;
-        if (!noteName.Equals(""))
+        if (!string.IsNullOrEmpty(noteName))
         {
             if (noteName.Contains("#"))
             {
                 noteObject = GetObjectFromPool(_sharpNotesPool, sharpNotePrefab);
-                noteObject.transform.localScale = new Vector3(_blackKeyWidth, 0.1f, 0.01f);
-                noteObject.transform.localPosition = new Vector3(_notePositions[noteName], noteObject.transform.localScale.y/2, - _parentHeight/2);
             }
             else
             {
                 noteObject = GetObjectFromPool(_naturalNotesPool, naturalNotePrefab);
-                noteObject.transform.localScale = new Vector3(_whiteKeyWidth, 0.1f, 0.01f);
-                noteObject.transform.localPosition = new Vector3(_notePositions[noteName], noteObject.transform.localScale.y/2, - _parentHeight/2);
             }
+            noteObject.transform.localScale = new Vector3(noteName.Contains("#") ? _blackKeyWidth : _whiteKeyWidth, 0.001f, 0.01f);
+            noteObject.transform.localPosition = new Vector3(_notePositions[noteName], noteObject.transform.localScale.y/2, - _parentHeight/2);
             noteObject.name = noteName;
             noteObject.SetActive(true);
             return noteObject;
@@ -125,7 +124,7 @@ public class PianoKeyPool : MonoBehaviour
         }
         else
         {
-            GameObject noteObject = Instantiate(prefab, pianoGameObject.transform, true);
+            GameObject noteObject = Instantiate(prefab, pianoGameObject.transform);
             return noteObject;
         }
     }
@@ -133,7 +132,7 @@ public class PianoKeyPool : MonoBehaviour
     public void ReturnNoteObject(GameObject noteObject, string noteName)
     {
         noteObject.SetActive(false);
-        if (!noteName.Equals(""))
+        if (!string.IsNullOrEmpty(noteName))
         {
             if (noteName.Contains("#"))
             {
