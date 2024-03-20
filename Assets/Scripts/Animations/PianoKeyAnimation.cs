@@ -15,6 +15,7 @@ public class PianoKeyAnimation : MonoBehaviour
     private bool shouldReturnToPool;
     private Vector3 initialScale; // Échelle initiale de la note
     private GameObject contactObject;
+    private float _duration;
 
 
     void Awake()
@@ -25,9 +26,9 @@ public class PianoKeyAnimation : MonoBehaviour
 
     private void Start()
     {
-        if (!tutorial)
+        if (tutorial)
         {
-            transform.position = new Vector3(transform.position.x, 100, transform.position.z);
+            transform.position = new Vector3(transform.position.x, transform.position.y + 0.5f, transform.position.z);
             contactObject = GameObject.FindGameObjectWithTag("ARObject");
 
         }
@@ -65,6 +66,7 @@ public class PianoKeyAnimation : MonoBehaviour
             {
                 // Fait descendre la note
                 transform.position += new Vector3(0, -growthRate, 0) * Time.deltaTime;
+                transform.localScale = new Vector3(transform.localScale.x, _duration/10, transform.localScale.z);
             }
             else
             {
@@ -78,28 +80,37 @@ public class PianoKeyAnimation : MonoBehaviour
                 {
                     transform.localScale = initialScale; // Réinitialise l'échelle pour une utilisation future
                     pianoKeyPool.ReturnNoteObject(gameObject, noteName);
-                    isPlaying = false; // Réinitialise isPlaying
+                    StopNote();
                 }
             }
 
             // Détection de contact pour déclencher la réduction de la taille
-            if (!isPlaying && Physics.Raycast(transform.position, Vector3.down, out RaycastHit hit, 0.1f))
-            {
-                if (hit.transform == contactObject.transform)
-                {
-                    isPlaying = true;
-                }
+            
+            if (transform.position.y <= contactObject.transform.position.y) 
+            { 
+                isPlaying = true;
             }
         }
     }
 
     public void PlayNote(string newNoteName, float duration)
     {
-        noteName = newNoteName;
-        isPlaying = true;
-        shouldReturnToPool = false;
-        StartCoroutine(StopNoteAfterDuration(duration)); // Démarrer la coroutine avec la durée de la note
+        if (!tutorial)
+        {
+            noteName = newNoteName;
+            isPlaying = true;
+            shouldReturnToPool = false;
+            StartCoroutine(StopNoteAfterDuration(duration)); // Démarrer la coroutine avec la durée de la note
+        }
+        else
+        {
+            noteName = newNoteName;
+            _duration = duration;
+            isPlaying = false;
+            shouldReturnToPool = false;
+        }
     }
+      
     
     public void PlayNote(string newNoteName)  
     {

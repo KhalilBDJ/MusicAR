@@ -1345,7 +1345,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   BPM: 120
-  xmlFilePath: C:\Users\khalil.bedjaoui\Downloads\gnossienne-1-partition-facile.xml
+  xmlFilePath: Assets/XML/gnossienne-1-partition-facile.xml
   pianoKeyPool: {fileID: 959509240}
 --- !u!114 &959509240
 MonoBehaviour:
