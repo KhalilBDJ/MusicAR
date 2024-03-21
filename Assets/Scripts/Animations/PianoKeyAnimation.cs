@@ -42,7 +42,7 @@ public class PianoKeyAnimation : MonoBehaviour
             {
                 // Fait grandir la note uniquement vers le haut (en augmentant sa taille et en ajustant sa position pour qu'elle grandisse vers le haut)
                 float growthAmount = growthRate * Time.deltaTime;
-                transform.localScale += new Vector3(0, growthAmount, 0);
+                transform.localScale += new Vector3(0, growthAmount/2, 0);
                 transform.position +=
                     new Vector3(0, growthAmount / 2,
                         0); // Ajuste la position pour que la croissance semble se faire vers le haut
@@ -62,33 +62,18 @@ public class PianoKeyAnimation : MonoBehaviour
         }
         else
         {
+            transform.position += new Vector3(0, -growthRate, 0) * Time.deltaTime;
             if (!isPlaying)
             {
-                // Fait descendre la note
-                transform.position += new Vector3(0, -growthRate, 0) * Time.deltaTime;
                 transform.localScale = new Vector3(transform.localScale.x, _duration/10, transform.localScale.z);
             }
-            else
-            {
-                // Réduit la taille de la note
-                float shrinkAmount = growthRate * Time.deltaTime;
-                transform.localScale -= new Vector3(0, shrinkAmount, 0);
-                transform.position -= new Vector3(0, shrinkAmount / 2, 0); // Ajuste la position pour que la réduction semble se faire vers le bas
-
-                // Vérifie si la taille de la note est suffisamment petite pour être retournée au pool
-                if (transform.localScale.y <= 0)
-                {
-                    transform.localScale = initialScale; // Réinitialise l'échelle pour une utilisation future
-                    pianoKeyPool.ReturnNoteObject(gameObject, noteName);
-                    StopNote();
-                }
-            }
-
-            // Détection de contact pour déclencher la réduction de la taille
             
-            if (transform.position.y <= contactObject.transform.position.y) 
+            if (transform.position.y <= contactObject.transform.position.y - transform.localScale.y) 
             { 
                 isPlaying = true;
+                transform.localScale = initialScale; // Réinitialise l'échelle pour une utilisation future
+                pianoKeyPool.ReturnNoteObject(gameObject, noteName);
+                StopNote();
             }
         }
     }

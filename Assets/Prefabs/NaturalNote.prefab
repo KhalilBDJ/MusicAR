@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 7802548663446867900}
   - component: {fileID: 8946867982560696518}
   - component: {fileID: 3972593460052186119}
+  - component: {fileID: 6162347742847719930}
   m_Layer: 0
   m_Name: NaturalNote
   m_TagString: Untagged
@@ -120,5 +121,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3641b371908a069499cc078598ded7b3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tutorial: 1
+  tutorial: 0
   noteName: 
+--- !u!114 &6162347742847719930
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7355207133196070735}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 91ab757cb158946479671e1b0e65b340, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
