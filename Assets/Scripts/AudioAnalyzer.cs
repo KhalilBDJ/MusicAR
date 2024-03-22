@@ -15,6 +15,10 @@ public class AudioAnalyzer : MonoBehaviour
     public float dbValue;
     public float pitchValue;
 
+    public bool tutorial;
+    public event EventHandler<NotePlayedEventArgs> NoteChanged;
+
+
     public AudioSource source;
 
     public int qSamples = 1024;
@@ -41,12 +45,8 @@ public class AudioAnalyzer : MonoBehaviour
     public PianoKeyPool pianoKeyPool;
 
     private Dictionary<string, GameObject> activeKeys = new Dictionary<string, GameObject>();
-
-    public delegate void NoteChangedEventHandler(List<String> newNotes);
-
+    
     private List<String> previousNotes = new List<string>();
-    public event NoteChangedEventHandler NoteChanged;
-
     void Start()
     {
         _isPlaying = false;
@@ -66,7 +66,7 @@ public class AudioAnalyzer : MonoBehaviour
     void Update()
     {
         AnalyzeSound();
-        UnityEngine.Debug.Log(GetDetectedNote(_pitchEstimator.Estimate(source)));
+        Debug.Log(GetDetectedNote(_pitchEstimator.Estimate(source)));
     }
 
     private void AnalyzeSound()
@@ -152,21 +152,32 @@ private List<float> GetFrequencies()
     {
         if (!previousNotes.Contains(detectedNote) && !stoppedKeys.Contains(detectedNote))
         {
-            GameObject pianoKey = pianoKeyPool.GetNoteObject(detectedNote);
-            activeKeys.Add(detectedNote, pianoKey);
-            var pianoKeyAnimation = pianoKey.GetComponentInChildren<PianoKeyAnimation>();
-            pianoKeyAnimation.PlayNote(detectedNote);
+            if (tutorial)
+            {
+                NoteChanged?.Invoke(this, new NotePlayedEventArgs(detectedNote, true));
+            }
+            else
+            {
+                GameObject pianoKey = pianoKeyPool.GetNoteObject(detectedNote);
+                activeKeys.Add(detectedNote, pianoKey);
+                var pianoKeyAnimation = pianoKey.GetComponentInChildren<PianoKeyAnimation>();
+                pianoKeyAnimation.PlayNote(detectedNote);
+            }
         }
     }
 
-    foreach (var key in stoppedKeys)
+    if (!tutorial)
     {
-        GameObject stopNote = activeKeys[key];
-        var pianoKeyAnimation = stopNote.GetComponentInChildren<PianoKeyAnimation>();
-        pianoKeyAnimation.StopNote();
-        activeKeys.Remove(key);
+        foreach (var key in stoppedKeys)
+        {
+            GameObject stopNote = activeKeys[key];
+            var pianoKeyAnimation = stopNote.GetComponentInChildren<PianoKeyAnimation>();
+            pianoKeyAnimation.StopNote();
+            activeKeys.Remove(key);
+        }
+        previousNotes = detectedNotes;
     }
-    previousNotes = detectedNotes;
+   
 
     return frequencies;
 }

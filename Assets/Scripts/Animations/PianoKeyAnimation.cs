@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class PianoKeyAnimation : MonoBehaviour
@@ -9,6 +10,8 @@ public class PianoKeyAnimation : MonoBehaviour
     private float growthRate = 0.05f;
     private float moveRate = 0.05f;
     public string noteName; // Ajouté pour stocker le nom de la note
+    private AudioAnalyzer analyzer;
+    private GameObject scripts;
 
     private bool isPlaying;
     private PianoKeyPool pianoKeyPool;
@@ -20,9 +23,23 @@ public class PianoKeyAnimation : MonoBehaviour
 
     void Awake()
     {
+        scripts = GameObject.FindGameObjectWithTag("Script");
+        analyzer = scripts.GetComponent<AudioAnalyzer>();
         pianoKeyPool = FindObjectOfType<PianoKeyPool>();
         initialScale = transform.localScale; // Sauvegarde de l'échelle initiale
     }
+    
+    private void OnEnable()
+    {
+        // Suppose AudioAnalyzerInstance est une référence à l'instance de votre AudioAnalyzer
+        analyzer.NoteChanged += OnNoteChanged;
+    }
+
+    private void OnDisable()
+    {
+        analyzer.NoteChanged -= OnNoteChanged;
+    }
+    
 
     private void Start()
     {
@@ -30,7 +47,7 @@ public class PianoKeyAnimation : MonoBehaviour
         {
             transform.position = new Vector3(transform.position.x, transform.position.y + 0.5f, transform.position.z);
             contactObject = GameObject.FindGameObjectWithTag("ARObject");
-
+            
         }
     }
 
@@ -81,7 +98,21 @@ public class PianoKeyAnimation : MonoBehaviour
                     transform.localScale = initialScale; // Réinitialise l'échelle pour une utilisation future
                     pianoKeyPool.ReturnNoteObject(gameObject, noteName);
                     StopNote();
+                }
+        }
+    }
+
+    private void OnNoteChanged(object sender, NotePlayedEventArgs e)
+    {
+        if (e.Note == this.noteName && isPlaying)
+        {
+            if (e.ChangeColor)
+            {
+                // Changer la couleur de l'objet
+                GetComponent<Renderer>().material.color = Color.red;
             }
+
+            // Gérer d'autres actions basées sur la note jouée
         }
     }
 
