@@ -1345,7 +1345,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   BPM: 120
-  xmlFilePath: Assets/XML/gnossienne-1-partition-facile.xml
+  xmlFilePath: Assets/XML/Dmitri-Shostakovich-Waltz-no.-2.xml
   pianoKeyPool: {fileID: 959509240}
 --- !u!114 &959509240
 MonoBehaviour:
@@ -1365,7 +1365,7 @@ MonoBehaviour:
     type: 3}
   pianoGameObject: {fileID: 2028030085638216747, guid: 1b09b34a8099a454c929f6bf91ab5997,
     type: 3}
-  initialPoolSize: 200
+  initialPoolSize: 2000
 --- !u!1 &1156893772
 GameObject:
   m_ObjectHideFlags: 0

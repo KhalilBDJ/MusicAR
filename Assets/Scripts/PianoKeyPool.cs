@@ -7,7 +7,7 @@ public class PianoKeyPool : MonoBehaviour
     public GameObject naturalNotePrefab;
     public GameObject sharpNotePrefab;
     public GameObject pianoGameObject; 
-    public int initialPoolSize = 200;
+    public int initialPoolSize = 2000;
     
     private float _whiteKeyWidth;
     private float _blackKeyWidth;

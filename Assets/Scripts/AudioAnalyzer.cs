@@ -156,7 +156,6 @@ private List<float> GetFrequencies()
             activeKeys.Add(detectedNote, pianoKey);
             var pianoKeyAnimation = pianoKey.GetComponentInChildren<PianoKeyAnimation>();
             pianoKeyAnimation.PlayNote(detectedNote);
-           // Debug.Log("note: " + detectedNote);
         }
     }
 
