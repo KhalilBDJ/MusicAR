@@ -1367,7 +1367,7 @@ MonoBehaviour:
     type: 3}
   pianoGameObject: {fileID: 2028030085638216747, guid: 1b09b34a8099a454c929f6bf91ab5997,
     type: 3}
-  initialPoolSize: 2000
+  initialPoolSize: 300
 --- !u!114 &959509241
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1405,7 +1405,7 @@ AudioSource:
     type: 2}
   m_audioClip: {fileID: 8300000, guid: c665befd14d817d4f8f7a02afaf5644b, type: 3}
   m_Resource: {fileID: 8300000, guid: c665befd14d817d4f8f7a02afaf5644b, type: 3}
-  m_PlayOnAwake: 1
+  m_PlayOnAwake: 0
   m_Volume: 1
   m_Pitch: 1
   Loop: 0

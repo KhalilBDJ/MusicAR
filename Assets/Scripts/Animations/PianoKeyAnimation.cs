@@ -20,6 +20,8 @@ public class PianoKeyAnimation : MonoBehaviour
     private GameObject contactObject;
     private float _duration;
 
+    private string _currentNote;
+
 
     void Awake()
     {
@@ -62,6 +64,7 @@ public class PianoKeyAnimation : MonoBehaviour
                 transform.localScale += new Vector3(0, growthAmount/2, 0);
                 transform.position += new Vector3(0, growthAmount / 2, 0); // Ajuste la position pour que la croissance semble se faire vers le haut
             }
+            
             else
             {
                 // Une fois la note arrêtée, elle se détache et monte indéfiniment
@@ -78,41 +81,49 @@ public class PianoKeyAnimation : MonoBehaviour
         else
         {
             
-                // Calculer la vitesse pour que le point P traverse la note en '_duration' secondes.
-                float requiredSpeed = 0.15f;
+            // Calculer la vitesse pour que le point P traverse la note en '_duration' secondes.
+            float requiredSpeed = 0.15f;
 
-                transform.localScale = new Vector3(transform.localScale.x, (requiredSpeed * _duration)/2,
-                    transform.localScale.z);
+            transform.localScale = new Vector3(transform.localScale.x, (requiredSpeed * _duration)/2,
+                transform.localScale.z);
 
-                // Appliquer la vitesse ajustée
-                transform.position += new Vector3(0, -requiredSpeed, 0) * Time.deltaTime;
+            // Appliquer la vitesse ajustée
+            transform.position += new Vector3(0, -requiredSpeed, 0) * Time.deltaTime;
 
-                if (!isPlaying)
+            if (!isPlaying)
+            {
+                transform.localScale = new Vector3(transform.localScale.x, _duration/10, transform.localScale.z);
+            }
+
+            if (transform.position.y >= contactObject.transform.position.y - transform.localScale.y && transform.position.y <= contactObject.transform.position.y + transform.localScale.y/2)
+            {
+                if (_currentNote != noteName)
                 {
-                    transform.localScale = new Vector3(transform.localScale.x, _duration/10, transform.localScale.z);
-                }
+                    GetComponent<Renderer>().material.color = Color.red;
 
-                if (transform.position.y <= contactObject.transform.position.y - transform.localScale.y) 
-                { 
-                    isPlaying = true;
-                    transform.localScale = initialScale; // Réinitialise l'échelle pour une utilisation future
-                    pianoKeyPool.ReturnNoteObject(gameObject, noteName);
-                    StopNote();
                 }
+            }
+
+            if (transform.position.y <= contactObject.transform.position.y - transform.localScale.y) 
+            { 
+                transform.localScale = initialScale; 
+                pianoKeyPool.ReturnNoteObject(gameObject, noteName);
+                StopNote();
+            }
         }
     }
 
     private void OnNoteChanged(object sender, NotePlayedEventArgs e)
     {
-        if (e.Note == this.noteName && isPlaying)
+
+        _currentNote = e.Note;
+        if (e.Note != this.noteName && isPlaying)
         {
             if (e.ChangeColor)
             {
-                // Changer la couleur de l'objet
                 GetComponent<Renderer>().material.color = Color.red;
             }
 
-            // Gérer d'autres actions basées sur la note jouée
         }
     }
 

@@ -71,9 +71,7 @@ public class AudioAnalyzer : MonoBehaviour
 
     private void AnalyzeSound()
     {
-    GetFrequencies();
-   // Debug.Log(GetDetectedNote(_yinPitchTracker.GetPitch(samples)));
-
+        GetFrequencies();
     }
 
     private void GetRMSAndDBValues(out float rmsValue, out float dbValue)
