@@ -20,7 +20,7 @@ public class PianoKeyAnimation : MonoBehaviour
     private GameObject contactObject;
     private float _duration;
 
-    private string _currentNote;
+    private List<string> _currentNotes;
 
 
     void Awake()
@@ -34,12 +34,12 @@ public class PianoKeyAnimation : MonoBehaviour
     private void OnEnable()
     {
         // Suppose AudioAnalyzerInstance est une référence à l'instance de votre AudioAnalyzer
-        analyzer.NoteChanged += OnNoteChanged;
+        analyzer.NoteChanged += OnNotesChanged;
     }
 
     private void OnDisable()
     {
-        analyzer.NoteChanged -= OnNoteChanged;
+        analyzer.NoteChanged -= OnNotesChanged;
     }
     
 
@@ -97,9 +97,13 @@ public class PianoKeyAnimation : MonoBehaviour
 
             if (transform.position.y >= contactObject.transform.position.y - transform.localScale.y && transform.position.y <= contactObject.transform.position.y + transform.localScale.y/2)
             {
-                if (_currentNote != noteName)
+                if (!_currentNotes.Contains(noteName))
                 {
                     GetComponent<Renderer>().material.color = Color.red;
+                }
+                else
+                {
+                    GetComponent<Renderer>().material.color = Color.blue;
 
                 }
             }
@@ -113,18 +117,9 @@ public class PianoKeyAnimation : MonoBehaviour
         }
     }
 
-    private void OnNoteChanged(object sender, NotePlayedEventArgs e)
+    private void OnNotesChanged(object sender, NotePlayedEventArgs e)
     {
-
-        _currentNote = e.Note;
-        if (e.Note != this.noteName && isPlaying)
-        {
-            if (e.ChangeColor)
-            {
-                GetComponent<Renderer>().material.color = Color.red;
-            }
-
-        }
+        _currentNotes = e.Notes;
     }
 
     public void PlayNote(string newNoteName, float duration)

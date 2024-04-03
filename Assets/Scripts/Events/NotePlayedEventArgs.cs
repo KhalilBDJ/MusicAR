@@ -1,13 +1,14 @@
 using System;
+using System.Collections.Generic;
 
 public class NotePlayedEventArgs : EventArgs
 {
-    public string Note { get; set; }
+    public List<string> Notes { get; set; }
     public bool ChangeColor { get; set; }
 
-    public NotePlayedEventArgs(string note, bool changeColor)
+    public NotePlayedEventArgs(List<string> notes, bool changeColor)
     {
-        Note = note;
+        Notes = notes;
         ChangeColor = changeColor;
     }
 }

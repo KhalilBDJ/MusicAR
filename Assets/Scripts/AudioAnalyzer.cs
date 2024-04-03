@@ -152,7 +152,7 @@ private List<float> GetFrequencies()
         {
             if (tutorial)
             {
-                NoteChanged?.Invoke(this, new NotePlayedEventArgs(detectedNote, true));
+                NoteChanged?.Invoke(this, new NotePlayedEventArgs(detectedNotes, true));
             }
             else
             {
