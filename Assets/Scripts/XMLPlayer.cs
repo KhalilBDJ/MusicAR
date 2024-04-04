@@ -45,61 +45,61 @@ public class XMLPlayer : MonoBehaviour
 
 
     IEnumerator PlayMusic()
-{
-    float secondsPerBeat = 60f / BPM; // Calculer le temps par battement en secondes
-
-    foreach (Measure measure in measures)
     {
-        foreach (List<List<Symbol>> symbolSet in measure.GetMeasureSymbolList()) // Parcourir chaque groupe de symboles dans la mesure
+        float secondsPerBeat = 60f / BPM; // Calculer le temps par battement en secondes
+
+        foreach (Measure measure in measures)
         {
-            foreach (List<Symbol> symbolList in symbolSet) // Chaque main, droite et gauche
+            foreach (List<List<Symbol>> symbolSet in measure.GetMeasureSymbolList()) // Parcourir chaque groupe de symboles dans la mesure
             {
-                foreach (Symbol symbol in symbolList) // Chaque symbole/note dans la main
+                foreach (List<Symbol> symbolList in symbolSet) // Chaque main, droite et gauche
                 {
-                    if (symbol is Note)
+                    foreach (Symbol symbol in symbolList) // Chaque symbole/note dans la main
                     {
-                        Note note = (Note)symbol;
-                        // Jouer la note principale (et potentiellement le début de l'accord)
-                        PlayNoteInAnimation(note);
-
-                        // Gérer les autres notes de l'accord, si présentes
-                        if (note.HasChord())
+                        if (symbol is Note)
                         {
-                            foreach (Note chordNote in note.GetChordList())
-                            {
-                                PlayNoteInAnimation(chordNote);
-                            }
-                        }
+                            Note note = (Note)symbol;
+                            // Jouer la note principale (et potentiellement le début de l'accord)
+                            PlayNoteInAnimation(note);
 
-                        yield return new WaitForSeconds(secondsPerBeat); // Attendre un battement avant de jouer la note suivante
+                            // Gérer les autres notes de l'accord, si présentes
+                            if (note.HasChord())
+                            {
+                                foreach (Note chordNote in note.GetChordList())
+                                {
+                                    PlayNoteInAnimation(chordNote);
+                                }
+                            }
+
+                            yield return new WaitForSeconds(secondsPerBeat); // Attendre un battement avant de jouer la note suivante
+                        }
                     }
                 }
             }
         }
     }
-}
 
-void PlayNoteInAnimation(Note note)
-{
-    // Construire le nom de la note en tenant compte des accords et des altérations
-    string noteName = note.GetStep();
-    if (!string.IsNullOrEmpty(note.GetAccidental()))
+    void PlayNoteInAnimation(Note note)
     {
-        if (note.GetAccidental() == "sharp") noteName += "#";
-        else if (note.GetAccidental() == "flat") noteName += "b";
-        // Gérer d'autres altérations si nécessaire
-    }
-    noteName += note.GetOctave();
+        // Construire le nom de la note en tenant compte des accords et des altérations
+        string noteName = note.GetStep();
+        if (!string.IsNullOrEmpty(note.GetAccidental()))
+        {
+            if (note.GetAccidental() == "sharp") noteName += "#";
+            else if (note.GetAccidental() == "flat") noteName += "b";
+            // Gérer d'autres altérations si nécessaire
+        }
+        noteName += note.GetOctave();
 
-    GameObject noteObject = pianoKeyPool.GetNoteObject(noteName); // Obtenir un objet de note du pool
-    if (noteObject != null)
-    {
-        PianoKeyAnimation keyAnimation = noteObject.GetComponent<PianoKeyAnimation>();
+        GameObject noteObject = pianoKeyPool.GetNoteObject(noteName); // Obtenir un objet de note du pool
+        if (noteObject != null)
+        {
+            PianoKeyAnimation keyAnimation = noteObject.GetComponent<PianoKeyAnimation>();
 
-        float duration = 60f / BPM * (4f / note.GetType()); // Calculer la durée de la note en secondes
-        keyAnimation.PlayNote(noteName, duration - 0.1f); // Jouer la note
+            float duration = 60f / BPM * (4f / note.GetType()); // Calculer la durée de la note en secondes
+            keyAnimation.PlayNote(noteName, duration - 0.1f); // Jouer la note
+        }
     }
-}
 
 
     IEnumerator StopNoteAfterDelay(PianoKeyAnimation keyAnimation, float delay)

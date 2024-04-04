@@ -108,8 +108,9 @@ public class PianoKeyAnimation : MonoBehaviour
                 }
             }
 
-            if (transform.position.y <= contactObject.transform.position.y - transform.localScale.y) 
-            { 
+            if (transform.position.y <= contactObject.transform.position.y - transform.localScale.y)
+            {
+                isPlaying = true;
                 transform.localScale = initialScale; 
                 pianoKeyPool.ReturnNoteObject(gameObject, noteName);
                 StopNote();

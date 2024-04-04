@@ -26,7 +26,6 @@ public class AudioAnalyzer : MonoBehaviour
     public float refValue = 0.1f;
     public AudioClip test;
 
-    private List<Peak> peaks = new List<Peak>();
     float[] samples;
     float[] spectrum;
     int samplerate;
@@ -84,131 +83,130 @@ public class AudioAnalyzer : MonoBehaviour
         }
         rmsValue = Mathf.Sqrt(sum / qSamples);
 
-        // Vérification si rmsValue est très petit
-        if (rmsValue > 0) // Ajoutez une tolérance si nécessaire
+        if (rmsValue > 0) 
         {
             dbValue = 20 * Mathf.Log10(rmsValue / refValue);
-            dbValue = Mathf.Max(dbValue, -160); // Plancher pour dbValue
+            dbValue = Mathf.Max(dbValue, -160); 
         }
         else
         {
-            dbValue = -160; // Valeur minimale pour éviter -infini
+            dbValue = -160; 
         }
     }
 
 
-private List<float> GetFrequencies()
-{
-    float currentRMSValue, currentDBValue;
-    GetRMSAndDBValues(out currentRMSValue, out currentDBValue);
-    float dynamicThreshold = _threshold * ( 1+ Mathf.Abs(currentDBValue / 160));
-    GetComponent<AudioSource>().GetSpectrumData(spectrum, 0, FFTWindow.Hanning);
-    var peaks = new List<Peak>();
-
-    for (int i = 0; i < binSize; i++)
+    private List<float> GetFrequencies()
     {
-        if (spectrum[i] > dynamicThreshold)
+        float currentRMSValue, currentDBValue;
+        GetRMSAndDBValues(out currentRMSValue, out currentDBValue);
+        float dynamicThreshold = _threshold * ( 1+ Mathf.Abs(currentDBValue / 160));
+        GetComponent<AudioSource>().GetSpectrumData(spectrum, 0, FFTWindow.Hanning);
+        var peaks = new List<Peak>();
+
+        for (int i = 0; i < binSize; i++)
         {
-            peaks.Add(new Peak(spectrum[i], i));
-        }
-    }
-
-    peaks.Sort((p1, p2) => p2.amplitude.CompareTo(p1.amplitude));
-
-    var frequencies = new List<float>();
-    List<String> detectedNotes = new List<string>();
-    
-    foreach (var peak in peaks)
-    {
-        float freqN = peak.index;
-        if (freqN > 0 && freqN < binSize - 1)
-        {
-            var dL = spectrum[peak.index - 1] / spectrum[peak.index];
-            var dR = spectrum[peak.index + 1] / spectrum[peak.index];
-            freqN += 0.5f * (dR * dR - dL * dL);
-            float pitchValue = freqN * (samplerate / 2f) / binSize;
-            //float pitchValue = _pitchEstimator.Estimate(source);
-
-            if (!IsFrequencySimilar(frequencies, pitchValue))
+            if (spectrum[i] > dynamicThreshold)
             {
-                frequencies.Add(pitchValue);
-                foreach (var frequency in frequencies)
+                peaks.Add(new Peak(spectrum[i], i));
+            }
+        }
+
+        peaks.Sort((p1, p2) => p2.amplitude.CompareTo(p1.amplitude));
+
+        var frequencies = new List<float>();
+        List<String> detectedNotes = new List<string>();
+    
+        foreach (var peak in peaks)
+        {
+            float freqN = peak.index;
+            if (freqN > 0 && freqN < binSize - 1)
+            {
+                var dL = spectrum[peak.index - 1] / spectrum[peak.index];
+                var dR = spectrum[peak.index + 1] / spectrum[peak.index];
+                freqN += 0.5f * (dR * dR - dL * dL);
+                float pitchValue = freqN * (samplerate / 2f) / binSize;
+                //float pitchValue = _pitchEstimator.Estimate(source);
+
+                if (!IsFrequencySimilar(frequencies, pitchValue))
                 {
-                    var detectedNote = GetDetectedNote(frequency);
-                    if (!detectedNotes.Contains(detectedNote) && !detectedNote.Equals("Unknown"))
+                    frequencies.Add(pitchValue);
+                    foreach (var frequency in frequencies)
                     {
-                        detectedNotes.Add(detectedNote);
+                        var detectedNote = GetDetectedNote(frequency);
+                        if (!detectedNotes.Contains(detectedNote) && !detectedNote.Equals("Unknown"))
+                        {
+                            detectedNotes.Add(detectedNote);
+                        }
                     }
                 }
             }
         }
-    }
     
-    var stoppedKeys = previousNotes.Except(detectedNotes).ToList();
+        var stoppedKeys = previousNotes.Except(detectedNotes).ToList();
    
-    foreach (var detectedNote in detectedNotes)
-    {
-        if (!previousNotes.Contains(detectedNote) && !stoppedKeys.Contains(detectedNote))
+        foreach (var detectedNote in detectedNotes)
         {
-            if (tutorial)
+            if (!previousNotes.Contains(detectedNote) && !stoppedKeys.Contains(detectedNote))
             {
-                NoteChanged?.Invoke(this, new NotePlayedEventArgs(detectedNotes, true));
-            }
-            else
-            {
-                GameObject pianoKey = pianoKeyPool.GetNoteObject(detectedNote);
-                activeKeys.Add(detectedNote, pianoKey);
-                var pianoKeyAnimation = pianoKey.GetComponentInChildren<PianoKeyAnimation>();
-                pianoKeyAnimation.PlayNote(detectedNote);
+                if (tutorial)
+                {
+                    NoteChanged?.Invoke(this, new NotePlayedEventArgs(detectedNotes, true));
+                }
+                else
+                {
+                    GameObject pianoKey = pianoKeyPool.GetNoteObject(detectedNote);
+                    activeKeys.Add(detectedNote, pianoKey);
+                    var pianoKeyAnimation = pianoKey.GetComponentInChildren<PianoKeyAnimation>();
+                    pianoKeyAnimation.PlayNote(detectedNote);
+                }
             }
         }
-    }
 
-    if (!tutorial)
-    {
-        foreach (var key in stoppedKeys)
+        if (!tutorial)
         {
-            GameObject stopNote = activeKeys[key];
-            var pianoKeyAnimation = stopNote.GetComponentInChildren<PianoKeyAnimation>();
-            pianoKeyAnimation.StopNote();
-            activeKeys.Remove(key);
+            foreach (var key in stoppedKeys)
+            {
+                GameObject stopNote = activeKeys[key];
+                var pianoKeyAnimation = stopNote.GetComponentInChildren<PianoKeyAnimation>();
+                pianoKeyAnimation.StopNote();
+                activeKeys.Remove(key);
+            }
+            previousNotes = detectedNotes;
         }
-        previousNotes = detectedNotes;
-    }
    
 
-    return frequencies;
-}
-
-private bool IsFrequencySimilar(List<float> frequencies, float newFrequency, float tolerance = 3.0f)
-{
-    foreach (var frequency in frequencies)
-    {
-        if (Mathf.Abs(frequency - newFrequency) < tolerance)
-        {
-            return true;
-        }
+        return frequencies;
     }
-    return false;
-}
 
-
-private string GetDetectedNote(float frequency)
-{
-    string detectedNote = "Unknown";
-    foreach (var kvp in noteFrequencies)
+    private bool IsFrequencySimilar(List<float> frequencies, float newFrequency, float tolerance = 3.0f)
     {
-        float minFrequency = kvp.Value - 1.0f;
-        float maxFrequency = kvp.Value + 1.0f;
-
-        if (frequency >= minFrequency && frequency <= maxFrequency)
+        foreach (var frequency in frequencies)
         {
-            detectedNote = kvp.Key;
-            break;
+            if (Mathf.Abs(frequency - newFrequency) < tolerance)
+            {
+                return true;
+            }
         }
+        return false;
     }
-    return detectedNote;
-}
+
+
+    private string GetDetectedNote(float frequency)
+    {
+        string detectedNote = "Unknown";
+        foreach (var kvp in noteFrequencies)
+        {
+            float minFrequency = kvp.Value - 1.0f;
+            float maxFrequency = kvp.Value + 1.0f;
+
+            if (frequency >= minFrequency && frequency <= maxFrequency)
+            {
+                detectedNote = kvp.Key;
+                break;
+            }
+        }
+        return detectedNote;
+    }
 
     
     private Dictionary<string, float> noteFrequencies = new Dictionary<string, float>
