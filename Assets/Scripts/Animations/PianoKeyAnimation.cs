@@ -33,13 +33,20 @@ public class PianoKeyAnimation : MonoBehaviour
     
     private void OnEnable()
     {
-        // Suppose AudioAnalyzerInstance est une référence à l'instance de votre AudioAnalyzer
-        analyzer.NoteChanged += OnNotesChanged;
+        if (tutorial)
+        {
+            analyzer.NoteChanged += OnNotesChanged;
+
+        }
     }
 
     private void OnDisable()
     {
-        analyzer.NoteChanged -= OnNotesChanged;
+        if (tutorial)
+        {
+            analyzer.NoteChanged -= OnNotesChanged;
+
+        }
     }
     
 

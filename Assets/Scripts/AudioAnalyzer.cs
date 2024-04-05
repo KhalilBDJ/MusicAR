@@ -36,7 +36,7 @@ public class AudioAnalyzer : MonoBehaviour
 
     private string _previousNote;
     private bool _isPlaying;
-    private float _threshold = 0.03f;
+    private float _threshold = 0.005f;
     private YinPitchTracker _yinPitchTracker;
     private AudioPitchEstimator _pitchEstimator;
 
@@ -48,7 +48,7 @@ public class AudioAnalyzer : MonoBehaviour
     private List<String> previousNotes = new List<string>();
     void Start()
     {
-        _isPlaying = false;
+        /*_isPlaying = false;
         samples = new float[qSamples];
         spectrum = new float[binSize];
         samplerate = AudioSettings.outputSampleRate;
@@ -59,18 +59,50 @@ public class AudioAnalyzer : MonoBehaviour
         _pitchEstimator = new AudioPitchEstimator();
         
 
-        masterMixer.SetFloat("masterVolume", -80f);
+        masterMixer.SetFloat("masterVolume", -80f);*/
+        
+        _isPlaying = false;
+        samples = new float[qSamples];
+        spectrum = new float[binSize];
+        samplerate = AudioSettings.outputSampleRate;
+
+        // Initialisation de l'AudioSource avec le microphone
+        if (Microphone.devices.Length > 0)
+        {
+            source = GetComponent<AudioSource>();
+            source.loop = true;
+            source.clip = Microphone.Start(Microphone.devices[0], true, 10, samplerate);
+            while (!(Microphone.GetPosition(null) > 0)) { } // Attendre que le microphone commence
+            source.Play();
+        }
+        else
+        {
+            Debug.LogError("Aucun microphone détecté");
+        }
+
+        _pitchEstimator = new AudioPitchEstimator();
+
+        // Mute le son si nécessaire
+        masterMixer.SetFloat("masterVolume", mute ? -80f : 0f);
     }
     
     void Update()
     {
-        AnalyzeSound();
-        Debug.Log(GetDetectedNote(_pitchEstimator.Estimate(source)));
+        if (Microphone.IsRecording(null))
+        {
+            AnalyzeSound();
+        }
+        //Debug.Log(GetDetectedNote(_pitchEstimator.Estimate(source)));
     }
 
     private void AnalyzeSound()
     {
         GetFrequencies();
+    }
+    
+    void OnDestroy()
+    {
+        Microphone.End(Microphone.devices[0]);
     }
 
     private void GetRMSAndDBValues(out float rmsValue, out float dbValue)
