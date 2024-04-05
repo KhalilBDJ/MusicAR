@@ -7,6 +7,12 @@ public class PianoKeyAnimation : MonoBehaviour
 {
     public bool tutorial;
 
+    public bool Tutorial
+    {
+        get => tutorial;
+        set => tutorial = value;
+    }
+
     private float growthRate = 0.05f;
     private float moveRate = 0.05f;
     public string noteName; // Ajouté pour stocker le nom de la note

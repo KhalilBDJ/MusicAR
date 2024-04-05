@@ -178,19 +178,16 @@ public class AudioAnalyzer : MonoBehaviour
    
         foreach (var detectedNote in detectedNotes)
         {
-            if (!previousNotes.Contains(detectedNote) && !stoppedKeys.Contains(detectedNote))
+            GameObject pianoKey = pianoKeyPool.GetNoteObject(detectedNote);
+            activeKeys.Add(detectedNote, pianoKey);
+            var pianoKeyAnimation = pianoKey.GetComponentInChildren<PianoKeyAnimation>();
+            if (pianoKeyAnimation.Tutorial)
             {
-                if (tutorial)
-                {
-                    NoteChanged?.Invoke(this, new NotePlayedEventArgs(detectedNotes, true));
-                }
-                else
-                {
-                    GameObject pianoKey = pianoKeyPool.GetNoteObject(detectedNote);
-                    activeKeys.Add(detectedNote, pianoKey);
-                    var pianoKeyAnimation = pianoKey.GetComponentInChildren<PianoKeyAnimation>();
-                    pianoKeyAnimation.PlayNote(detectedNote);
-                }
+                
+            }
+            else
+            {
+                pianoKeyAnimation.PlayNote(detectedNote);
             }
         }
 
