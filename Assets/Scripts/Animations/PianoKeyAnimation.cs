@@ -74,7 +74,7 @@ public class PianoKeyAnimation : MonoBehaviour
             {
                 // Fait grandir la note uniquement vers le haut (en augmentant sa taille et en ajustant sa position pour qu'elle grandisse vers le haut)
                 float growthAmount = growthRate * Time.deltaTime;
-                transform.localScale += new Vector3(0, growthAmount/2, 0);
+                transform.localScale += new Vector3(0, growthAmount, 0);
                 transform.position += new Vector3(0, growthAmount / 2, 0); // Ajuste la position pour que la croissance semble se faire vers le haut
             }
             
