@@ -7,7 +7,7 @@ namespace PitchDetection
 
     public class PitchDetectorExample : MonoBehaviour
     {
-        public AudioClip audioClip;
+        //public AudioClip audioClip;
         public float threshold = 0.01f;
         public int bufferSize = 1024;
         public TMP_Text currentNote;
@@ -23,6 +23,11 @@ namespace PitchDetection
             }
             audioSource.loop = true; 
             audioSource.mute = false; 
+            
+            foreach (var device in Microphone.devices)
+            {
+                Debug.Log("Name: " + device);
+            }
 
             // Commencez à capturer l'audio du microphone
             StartMicrophone();
@@ -32,7 +37,7 @@ namespace PitchDetection
         
         void StartMicrophone()
         {
-            audioSource.clip = Microphone.Start(null, true, 10, AudioSettings.outputSampleRate);
+            audioSource.clip = Microphone.Start(Microphone.devices[0], true, 10, AudioSettings.outputSampleRate);
             // Attendre que le microphone commence à capturer
             while (!(Microphone.GetPosition(null) > 0)) { }
             audioSource.Play();
@@ -48,7 +53,7 @@ namespace PitchDetection
         void Update()
         {
             //audioSource.Play();
-
+            //audioSource.PlayOneShot(audioSource.clip);
             if (Microphone.IsRecording(null))
             {
                 float[] audioData = new float[bufferSize];

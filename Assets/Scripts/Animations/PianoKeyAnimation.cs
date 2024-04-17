@@ -14,7 +14,6 @@ public class PianoKeyAnimation : MonoBehaviour
     }
 
     private float growthRate = 0.05f;
-    private float moveRate = 0.05f;
     public string noteName; // Ajouté pour stocker le nom de la note
     private AudioAnalyzer analyzer;
     private GameObject scripts;
@@ -39,7 +38,7 @@ public class PianoKeyAnimation : MonoBehaviour
     
     private void OnEnable()
     {
-        if (tutorial)
+        if (analyzer.tutorial)
         {
             analyzer.NoteChanged += OnNotesChanged;
 
@@ -48,7 +47,7 @@ public class PianoKeyAnimation : MonoBehaviour
 
     private void OnDisable()
     {
-        if (tutorial)
+        if (analyzer.tutorial)
         {
             analyzer.NoteChanged -= OnNotesChanged;
 
@@ -62,13 +61,12 @@ public class PianoKeyAnimation : MonoBehaviour
         {
             transform.position = new Vector3(transform.position.x, transform.position.y + 0.5f, transform.position.z);
             contactObject = GameObject.FindGameObjectWithTag("ARObject");
-            
         }
     }
 
     void Update()
     {
-        if (!tutorial)
+        if (!analyzer.tutorial)
         {
             if (isPlaying)
             {
@@ -81,11 +79,11 @@ public class PianoKeyAnimation : MonoBehaviour
             else
             {
                 // Une fois la note arrêtée, elle se détache et monte indéfiniment
-                transform.position += new Vector3(0, moveRate, 0) * Time.deltaTime;
+                transform.position += new Vector3(0, growthRate, 0) * Time.deltaTime;
             }
 
             // Si la note doit être retournée au pool et s'éloigne suffisamment, la remettre au pool
-            if (shouldReturnToPool && transform.position.y > 50) // Condition modifiée pour utiliser la position en y
+            if (shouldReturnToPool && transform.localPosition.y > 50) // Condition modifiée pour utiliser la position en y
             {
                 shouldReturnToPool = false;
                 pianoKeyPool.ReturnNoteObject(gameObject, noteName);
@@ -117,7 +115,6 @@ public class PianoKeyAnimation : MonoBehaviour
                 else
                 {
                     GetComponent<Renderer>().material.color = Color.blue;
-
                 }
             }
 

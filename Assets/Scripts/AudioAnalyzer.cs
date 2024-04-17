@@ -49,7 +49,7 @@ public class AudioAnalyzer : MonoBehaviour
     private List<String> previousNotes = new List<string>();
     void Start()
     {
-        /*_isPlaying = false;
+        _isPlaying = false;
         samples = new float[qSamples];
         spectrum = new float[binSize];
         samplerate = AudioSettings.outputSampleRate;
@@ -60,9 +60,9 @@ public class AudioAnalyzer : MonoBehaviour
         _pitchEstimator = new AudioPitchEstimator();
         
 
-        masterMixer.SetFloat("masterVolume", -80f);*/
+        masterMixer.SetFloat("masterVolume", -80f);
         
-        _isPlaying = false;
+        /*_isPlaying = false;
         samples = new float[qSamples];
         spectrum = new float[binSize];
         samplerate = AudioSettings.outputSampleRate;
@@ -73,7 +73,7 @@ public class AudioAnalyzer : MonoBehaviour
             source = GetComponent<AudioSource>();
             source.loop = true;
             source.clip = Microphone.Start(Microphone.devices[0], true, 10, samplerate);
-            while (!(Microphone.GetPosition(null) > 0)) { } // Attendre que le microphone commence
+            while (!(Microphone.GetPosition(Microphone.devices[0]) > 0)) { } // Attendre que le microphone commence
             source.Play();
         }
         else
@@ -82,7 +82,7 @@ public class AudioAnalyzer : MonoBehaviour
         }
 
         _pitchEstimator = new AudioPitchEstimator();
-
+        */
         // Mute le son si nécessaire
         //masterMixer.SetFloat("masterVolume", mute ? -80f : 0f);
     }
@@ -91,17 +91,10 @@ public class AudioAnalyzer : MonoBehaviour
     {
         if (Microphone.IsRecording(null))
         {
-            AnalyzeSound();
         }
-        else
-        {
-            AnalyzeSound();
-        }
-        //Debug.Log(GetDetectedNote(_pitchEstimator.Estimate(source)));
-    }
-    private void AnalyzeSound()
-    {
         GetFrequencies();
+
+        //Debug.Log(GetDetectedNote(_pitchEstimator.Estimate(source)));
     }
     
     
@@ -186,15 +179,15 @@ private List<float> GetFrequencies()
     {
         if (!previousNotes.Contains(detectedNote) && !stoppedKeys.Contains(detectedNote))
         {
-            if (tutorial)
+            GameObject pianoKey = pianoKeyPool.GetNoteObject(detectedNote);
+            activeKeys.Add(detectedNote, pianoKey);
+            var pianoKeyAnimation = pianoKey.GetComponentInChildren<PianoKeyAnimation>();
+            if (pianoKeyAnimation.Tutorial)
             {
-                NoteChanged?.Invoke(this, new NotePlayedEventArgs(detectedNotes, true));
+                
             }
             else
             {
-                GameObject pianoKey = pianoKeyPool.GetNoteObject(detectedNote);
-                activeKeys.Add(detectedNote, pianoKey);
-                var pianoKeyAnimation = pianoKey.GetComponentInChildren<PianoKeyAnimation>();
                 pianoKeyAnimation.PlayNote(detectedNote);
             }
         }

@@ -11,7 +11,7 @@ PrefabInstance:
     - target: {fileID: 3972593460052186119, guid: 6bcb75d4e57598f46aa251faf6d691b3,
         type: 3}
       propertyPath: tutorial
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7355207133196070735, guid: 6bcb75d4e57598f46aa251faf6d691b3,
         type: 3}

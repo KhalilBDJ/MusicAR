@@ -1389,7 +1389,7 @@ MonoBehaviour:
   binSize: 8192
   refValue: 0.1
   test: {fileID: 8300000, guid: c665befd14d817d4f8f7a02afaf5644b, type: 3}
-  mute: 1
+  mute: 0
   masterMixer: {fileID: 24100000, guid: 3835f19220cc5854db7b549d3b225f75, type: 2}
   pianoKeyPool: {fileID: 959509240}
 --- !u!82 &959509242
