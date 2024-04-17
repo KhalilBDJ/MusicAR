@@ -37,7 +37,7 @@ public class AudioAnalyzer : MonoBehaviour
 
     private string _previousNote;
     private bool _isPlaying;
-    private float _threshold = 0.005f;
+    private float _threshold = 0.03f;
     private YinPitchTracker _yinPitchTracker;
     private AudioPitchEstimator _pitchEstimator;
 
@@ -73,7 +73,7 @@ public class AudioAnalyzer : MonoBehaviour
             source = GetComponent<AudioSource>();
             source.loop = true;
             source.clip = Microphone.Start(Microphone.devices[0], true, 10, samplerate);
-            while (!(Microphone.GetPosition(Microphone.devices[0]) > 0)) { } // Attendre que le microphone commence
+            while (!(Microphone.GetPosition(null) > 0)) { } // Attendre que le microphone commence
             source.Play();
         }
         else
@@ -81,8 +81,8 @@ public class AudioAnalyzer : MonoBehaviour
             Debug.LogError("Aucun microphone détecté");
         }
 
-        _pitchEstimator = new AudioPitchEstimator();
-        */
+        _pitchEstimator = new AudioPitchEstimator();*/
+
         // Mute le son si nécessaire
         //masterMixer.SetFloat("masterVolume", mute ? -80f : 0f);
     }
@@ -91,10 +91,17 @@ public class AudioAnalyzer : MonoBehaviour
     {
         if (Microphone.IsRecording(null))
         {
+            AnalyzeSound();
         }
-        GetFrequencies();
-
+        else
+        {
+            AnalyzeSound();
+        }
         //Debug.Log(GetDetectedNote(_pitchEstimator.Estimate(source)));
+    }
+    private void AnalyzeSound()
+    {
+        GetFrequencies();
     }
     
     
@@ -179,15 +186,15 @@ private List<float> GetFrequencies()
     {
         if (!previousNotes.Contains(detectedNote) && !stoppedKeys.Contains(detectedNote))
         {
-            GameObject pianoKey = pianoKeyPool.GetNoteObject(detectedNote);
-            activeKeys.Add(detectedNote, pianoKey);
-            var pianoKeyAnimation = pianoKey.GetComponentInChildren<PianoKeyAnimation>();
-            if (pianoKeyAnimation.Tutorial)
+            if (tutorial)
             {
-                
+                NoteChanged?.Invoke(this, new NotePlayedEventArgs(detectedNotes, true));
             }
             else
             {
+                GameObject pianoKey = pianoKeyPool.GetNoteObject(detectedNote);
+                activeKeys.Add(detectedNote, pianoKey);
+                var pianoKeyAnimation = pianoKey.GetComponentInChildren<PianoKeyAnimation>();
                 pianoKeyAnimation.PlayNote(detectedNote);
             }
         }

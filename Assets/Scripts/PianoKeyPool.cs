@@ -44,14 +44,14 @@ public class PianoKeyPool : MonoBehaviour
         if (GameObject.FindGameObjectWithTag("ARObject") && !_isInstatiated) 
         {
             pianoGameObject = GameObject.FindGameObjectWithTag("ARObject");
-            _whiteKeyWidth = pianoGameObject.GetComponentInChildren<MeshRenderer>().bounds.size.x / 52;
+            _whiteKeyWidth = pianoGameObject.GetComponentInChildren<Transform>().localScale.x / 52;
             _blackKeyWidth = _whiteKeyWidth / 2;
             _currentXPosition = _blackKeyWidth;
             _noteNames = new List<string>(_names);
             InitializePool(_sharpNotesPool, sharpNotePrefab, initialPoolSize);
             InitializePool(_naturalNotesPool, naturalNotePrefab, initialPoolSize);
             InitializeNotePositions();
-            _parentHeight = pianoGameObject.GetComponentInChildren<MeshRenderer>().bounds.size.y;
+            _parentHeight = pianoGameObject.GetComponentInChildren<Transform>().localScale.y;
             _isInstatiated = true;
         }
     }
@@ -108,7 +108,7 @@ public class PianoKeyPool : MonoBehaviour
                 noteObject = GetObjectFromPool(_naturalNotesPool, naturalNotePrefab);
             }
             noteObject.transform.localScale = new Vector3(noteName.Contains("#") ? _blackKeyWidth : _whiteKeyWidth, 0.001f, 0.01f);
-            noteObject.transform.localPosition = new Vector3(_notePositions[noteName], noteObject.transform.localScale.y/2, 0);
+            noteObject.transform.localPosition = new Vector3(_notePositions[noteName], -0.50f, 0);
             noteObject.name = noteName;
             noteObject.SetActive(true);
             return noteObject;
