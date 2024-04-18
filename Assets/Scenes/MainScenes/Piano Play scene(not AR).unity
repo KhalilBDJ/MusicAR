@@ -390,6 +390,7 @@ GameObject:
   - component: {fileID: 1713506835}
   - component: {fileID: 1713506834}
   - component: {fileID: 1713506833}
+  - component: {fileID: 1713506836}
   m_Layer: 0
   m_Name: Scripts
   m_TagString: Script
@@ -445,7 +446,7 @@ MonoBehaviour:
   rmsValue: 0
   dbValue: 0
   pitchValue: 0
-  tutorial: 0
+  tutorial: 1
   source: {fileID: 1713506835}
   qSamples: 1024
   binSize: 8192
@@ -552,6 +553,21 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &1713506836
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1713506831}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4094a7cc88a7914a88fa539327b91b2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  BPM: 120
+  xmlFilePath: Assets/XML/Dmitri-Shostakovich-Waltz-no.-2.xml
+  pianoKeyPool: {fileID: 1713506833}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

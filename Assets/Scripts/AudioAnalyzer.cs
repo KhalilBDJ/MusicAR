@@ -15,7 +15,7 @@ public class AudioAnalyzer : MonoBehaviour
     public float dbValue;
     public float pitchValue;
 
-    public bool tutorial;
+    private bool tutorial;
     public event EventHandler<NotePlayedEventArgs> NoteChanged;
 
 
@@ -58,6 +58,7 @@ public class AudioAnalyzer : MonoBehaviour
         GetComponent<AudioSource>().Play();
         GetComponent<AudioSource>().PlayOneShot(test);
         _pitchEstimator = new AudioPitchEstimator();
+        tutorial = GameManager.Instance.isTutorialMode;
         
 
         masterMixer.SetFloat("masterVolume", -80f);
@@ -91,17 +92,13 @@ public class AudioAnalyzer : MonoBehaviour
     {
         if (Microphone.IsRecording(null))
         {
-            AnalyzeSound();
+            GetFrequencies();
         }
         else
         {
-            AnalyzeSound();
+            GetFrequencies();
         }
         //Debug.Log(GetDetectedNote(_pitchEstimator.Estimate(source)));
-    }
-    private void AnalyzeSound()
-    {
-        GetFrequencies();
     }
     
     
@@ -205,7 +202,7 @@ private List<float> GetFrequencies()
         foreach (var key in stoppedKeys)
         {
             GameObject stopNote = activeKeys[key];
-            var pianoKeyAnimation = stopNote.GetComponentInChildren<PianoKeyAnimation>();
+            var pianoKeyAnimation = stopNote.GetComponentInChildren<PianoKeyAnimation>(); 
             pianoKeyAnimation.StopNote();
             activeKeys.Remove(key);
         }

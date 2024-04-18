@@ -5,13 +5,6 @@ using UnityEngine;
 
 public class PianoKeyAnimation : MonoBehaviour
 {
-    public bool tutorial;
-
-    public bool Tutorial
-    {
-        get => tutorial;
-        set => tutorial = value;
-    }
 
     private float growthRate = 0.05f;
     public string noteName; // Ajouté pour stocker le nom de la note
@@ -38,7 +31,7 @@ public class PianoKeyAnimation : MonoBehaviour
     
     private void OnEnable()
     {
-        if (analyzer.tutorial)
+        if (GameManager.Instance.isTutorialMode)
         {
             analyzer.NoteChanged += OnNotesChanged;
 
@@ -47,7 +40,7 @@ public class PianoKeyAnimation : MonoBehaviour
 
     private void OnDisable()
     {
-        if (analyzer.tutorial)
+        if (GameManager.Instance.isTutorialMode)
         {
             analyzer.NoteChanged -= OnNotesChanged;
 
@@ -57,9 +50,9 @@ public class PianoKeyAnimation : MonoBehaviour
 
     private void Start()
     {
-        if (tutorial)
+        if (GameManager.Instance.isTutorialMode)
         {
-            transform.position = new Vector3(transform.position.x, transform.position.y + 0.5f, transform.position.z);
+            transform.position = new Vector3(transform.position.x, transform.position.y + 1f, transform.position.z);
             contactObject = GameObject.FindGameObjectWithTag("ARObject");
         }
         
@@ -67,7 +60,7 @@ public class PianoKeyAnimation : MonoBehaviour
 
     void Update()
     {
-        if (!analyzer.tutorial)
+        if (!GameManager.Instance.isTutorialMode)
         {
             if (isPlaying)
             {
@@ -136,7 +129,7 @@ public class PianoKeyAnimation : MonoBehaviour
 
     public void PlayNote(string newNoteName, float duration)
     {
-        if (!tutorial)
+        if (!GameManager.Instance.isTutorialMode)
         {
             noteName = newNoteName;
             isPlaying = true;
