@@ -108,7 +108,7 @@ public class PianoKeyPool : MonoBehaviour
                 noteObject = GetObjectFromPool(_naturalNotesPool, naturalNotePrefab);
             }
             noteObject.transform.localScale = new Vector3(noteName.Contains("#") ? _blackKeyWidth : _whiteKeyWidth, 0.001f, 0.01f);
-            noteObject.transform.localPosition = new Vector3(_notePositions[noteName], -0.50f, 0);
+            noteObject.transform.localPosition = new Vector3(_notePositions[noteName], 0f, 0);
             noteObject.name = noteName;
             noteObject.SetActive(true);
             return noteObject;
