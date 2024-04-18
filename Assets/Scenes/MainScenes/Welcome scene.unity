@@ -131,6 +131,7 @@ GameObject:
   - component: {fileID: 453361905}
   - component: {fileID: 453361904}
   - component: {fileID: 453361903}
+  - component: {fileID: 453361906}
   m_Layer: 5
   m_Name: Not Tutorial Button
   m_TagString: Untagged
@@ -202,13 +203,13 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 11500000, guid: 1cee9dc5221fead479c9a3260fe9bdb2, type: 3}
-        m_TargetAssemblyTypeName: 
-        m_MethodName: 
-        m_Mode: 1
+      - m_Target: {fileID: 453361906}
+        m_TargetAssemblyTypeName: GameManager, Assembly-CSharp
+        m_MethodName: SetTutorialMode
+        m_Mode: 6
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: 
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
           m_StringArgument: 
@@ -252,6 +253,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 453361901}
   m_CullTransparentMesh: 1
+--- !u!114 &453361906
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 453361901}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1cee9dc5221fead479c9a3260fe9bdb2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  isTutorialMode: 0
 --- !u!1 &1419583222
 GameObject:
   m_ObjectHideFlags: 0
@@ -425,6 +439,7 @@ GameObject:
   - component: {fileID: 1951623993}
   - component: {fileID: 1951623992}
   - component: {fileID: 1951623991}
+  - component: {fileID: 1951623994}
   m_Layer: 5
   m_Name: Tutorial button
   m_TagString: Untagged
@@ -496,17 +511,17 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 11500000, guid: 1cee9dc5221fead479c9a3260fe9bdb2, type: 3}
-        m_TargetAssemblyTypeName: UnityEngine.Object, UnityEngine
-        m_MethodName: 
-        m_Mode: 1
+      - m_Target: {fileID: 1951623994}
+        m_TargetAssemblyTypeName: GameManager, Assembly-CSharp
+        m_MethodName: SetTutorialMode
+        m_Mode: 6
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
           m_StringArgument: 
-          m_BoolArgument: 0
+          m_BoolArgument: 1
         m_CallState: 2
 --- !u!114 &1951623992
 MonoBehaviour:
@@ -546,6 +561,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1951623989}
   m_CullTransparentMesh: 1
+--- !u!114 &1951623994
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1951623989}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1cee9dc5221fead479c9a3260fe9bdb2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  isTutorialMode: 0
 --- !u!1 &1976382750
 GameObject:
   m_ObjectHideFlags: 0

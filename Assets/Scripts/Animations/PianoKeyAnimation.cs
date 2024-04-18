@@ -17,7 +17,7 @@ public class PianoKeyAnimation : MonoBehaviour
     private Vector3 initialScale; // Échelle initiale de la note
     private GameObject contactObject;
     private float _duration;
-
+    private bool tutorial;
     private List<string> _currentNotes;
 
 
@@ -31,7 +31,7 @@ public class PianoKeyAnimation : MonoBehaviour
     
     private void OnEnable()
     {
-        if (GameManager.Instance.isTutorialMode)
+        if (tutorial)
         {
             analyzer.NoteChanged += OnNotesChanged;
 
@@ -40,7 +40,7 @@ public class PianoKeyAnimation : MonoBehaviour
 
     private void OnDisable()
     {
-        if (GameManager.Instance.isTutorialMode)
+        if (tutorial)
         {
             analyzer.NoteChanged -= OnNotesChanged;
 
@@ -50,7 +50,9 @@ public class PianoKeyAnimation : MonoBehaviour
 
     private void Start()
     {
-        if (GameManager.Instance.isTutorialMode)
+        //tutorial = GameManager.Instance.isTutorialMode;
+        tutorial = false;
+        if (tutorial)
         {
             transform.position = new Vector3(transform.position.x, transform.position.y + 1f, transform.position.z);
             contactObject = GameObject.FindGameObjectWithTag("ARObject");
@@ -60,7 +62,7 @@ public class PianoKeyAnimation : MonoBehaviour
 
     void Update()
     {
-        if (!GameManager.Instance.isTutorialMode)
+        if (!tutorial)
         {
             if (isPlaying)
             {
@@ -129,7 +131,7 @@ public class PianoKeyAnimation : MonoBehaviour
 
     public void PlayNote(string newNoteName, float duration)
     {
-        if (!GameManager.Instance.isTutorialMode)
+        if (!tutorial)
         {
             noteName = newNoteName;
             isPlaying = true;
