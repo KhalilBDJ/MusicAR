@@ -446,7 +446,6 @@ MonoBehaviour:
   rmsValue: 0
   dbValue: 0
   pitchValue: 0
-  tutorial: 1
   source: {fileID: 1713506835}
   qSamples: 1024
   binSize: 8192
@@ -560,7 +559,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1713506831}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f4094a7cc88a7914a88fa539327b91b2, type: 3}
   m_Name: 
