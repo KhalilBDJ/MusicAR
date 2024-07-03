@@ -58,8 +58,8 @@ public class AudioAnalyzer : MonoBehaviour
         GetComponent<AudioSource>().Play();
         GetComponent<AudioSource>().PlayOneShot(test);
         _pitchEstimator = new AudioPitchEstimator();
-        //tutorial = GameManager.Instance.isTutorialMode;
-        tutorial = false;
+        tutorial = GameManager.Instance.isTutorialMode;
+        //tutorial = false;
         
 
         masterMixer.SetFloat("masterVolume", -80f);

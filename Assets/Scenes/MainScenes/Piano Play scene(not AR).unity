@@ -446,12 +446,14 @@ MonoBehaviour:
   rmsValue: 0
   dbValue: 0
   pitchValue: 0
+  _modelAsset: {fileID: 5022602860645237092, guid: 2d31493567824884f94848426be5d7b2,
+    type: 3}
   source: {fileID: 1713506835}
   qSamples: 1024
-  binSize: 8192
+  binSize: 65536
   refValue: 0.1
   test: {fileID: 8300000, guid: 69e757ed84b1e1142bd2cc4c5cfe5109, type: 3}
-  mute: 0
+  mute: 1
   masterMixer: {fileID: 24100000, guid: 3835f19220cc5854db7b549d3b225f75, type: 2}
   pianoKeyPool: {fileID: 1713506833}
 --- !u!82 &1713506835
@@ -559,12 +561,12 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1713506831}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f4094a7cc88a7914a88fa539327b91b2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  BPM: 120
+  BPM: 60
   xmlFilePath: Assets/XML/Dmitri-Shostakovich-Waltz-no.-2.xml
   pianoKeyPool: {fileID: 1713506833}
 --- !u!1660057539 &9223372036854775807

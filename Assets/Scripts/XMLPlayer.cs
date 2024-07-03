@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using xmlParser;
 using symbol;
+using UnityEditor.Build.Content;
 
 public class XMLPlayer : MonoBehaviour
 {
@@ -16,7 +17,11 @@ public class XMLPlayer : MonoBehaviour
     
     void Start()
     {
-        
+        if (!GameManager.Instance.isTutorialMode)
+        {
+            this.enabled = false;
+            return;
+        }
         xmlFacade = new XmlFacade(xmlFilePath);
         measures = xmlFacade.GetMeasureList(); // Obtenir la liste des mesures à partir du XML
         StartCoroutine(WaitForARObjectInitialization());

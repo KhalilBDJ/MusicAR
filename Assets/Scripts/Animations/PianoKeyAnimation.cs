@@ -50,11 +50,11 @@ public class PianoKeyAnimation : MonoBehaviour
 
     private void Start()
     {
-        //tutorial = GameManager.Instance.isTutorialMode;
-        tutorial = false;
+        tutorial = GameManager.Instance.isTutorialMode;
+       //tutorial = false;
         if (tutorial)
         {
-            transform.position = new Vector3(transform.position.x, transform.position.y + 1f, transform.position.z);
+            transform.localPosition = new Vector3(transform.localPosition.x, transform.localPosition.y + 1f, transform.localPosition.z);
             contactObject = GameObject.FindGameObjectWithTag("ARObject");
         }
         
@@ -69,13 +69,13 @@ public class PianoKeyAnimation : MonoBehaviour
                 // Fait grandir la note uniquement vers le haut (en augmentant sa taille et en ajustant sa position pour qu'elle grandisse vers le haut)
                 float growthAmount = growthRate * Time.deltaTime;
                 transform.localScale += new Vector3(0, growthAmount, 0);
-                transform.position += new Vector3(0, growthAmount / 2, 0); // Ajuste la position pour que la croissance semble se faire vers le haut
+                transform.localPosition += new Vector3(0, growthAmount / 2, 0); // Ajuste la position pour que la croissance semble se faire vers le haut
             }
             
             else
             {
                 // Une fois la note arrêtée, elle se détache et monte indéfiniment
-                transform.position += new Vector3(0, growthRate, 0) * Time.deltaTime;
+                transform.localPosition += new Vector3(0, growthRate, 0) * Time.deltaTime;
             }
 
             // Si la note doit être retournée au pool et s'éloigne suffisamment, la remettre au pool
@@ -89,20 +89,20 @@ public class PianoKeyAnimation : MonoBehaviour
         {
             
             // Calculer la vitesse pour que le point P traverse la note en '_duration' secondes.
-            float requiredSpeed = 0.15f;
+            float requiredSpeed = 0.1f;
 
             transform.localScale = new Vector3(transform.localScale.x, (requiredSpeed * _duration)/2,
                 transform.localScale.z);
 
             // Appliquer la vitesse ajustée
-            transform.position += new Vector3(0, -requiredSpeed, 0) * Time.deltaTime;
+            transform.localPosition += new Vector3(0, -requiredSpeed, 0) * Time.deltaTime;
 
             if (!isPlaying)
             {
                 transform.localScale = new Vector3(transform.localScale.x, _duration/10, transform.localScale.z);
             }
 
-            if (transform.position.y >= contactObject.transform.position.y - transform.localScale.y && transform.position.y <= contactObject.transform.position.y + transform.localScale.y/2)
+            if (transform.localPosition.y >= contactObject.transform.localPosition.y - transform.localScale.y && transform.localPosition.y <= contactObject.transform.localPosition.y + transform.localScale.y/2)
             {
                 if (!_currentNotes.Contains(noteName))
                 {
@@ -114,7 +114,7 @@ public class PianoKeyAnimation : MonoBehaviour
                 }
             }
 
-            if (transform.position.y <= contactObject.transform.position.y - transform.localScale.y)
+            if (transform.localPosition.y <= contactObject.transform.localPosition.y - transform.localScale.y)
             {
                 isPlaying = true;
                 transform.localScale = initialScale; 
