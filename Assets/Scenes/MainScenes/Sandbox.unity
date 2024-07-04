@@ -821,7 +821,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _modelAsset: {fileID: 5022602860645237092, guid: 2d31493567824884f94848426be5d7b2,
     type: 3}
-  _clip: {fileID: 8300000, guid: 69e757ed84b1e1142bd2cc4c5cfe5109, type: 3}
+  _clip: {fileID: 8300000, guid: 6af1c10336e41f94d8d6315f96c53353, type: 3}
 --- !u!1 &1879550181
 GameObject:
   m_ObjectHideFlags: 0
