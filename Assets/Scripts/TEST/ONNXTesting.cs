@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using Unity.Sentis;
 
@@ -11,13 +12,15 @@ public class ONNXTesting : MonoBehaviour
     private IWorker _worker;
     private Model _runtimeModel;
 
-    private const int sampleRate = 16000; // Example sample rate, change if needed
-    private const int windowSize = 43844; // Fixed window size
-    private const int hopSize = 43844 - 30 * 512; // Overlap size is 30 frames * FFT_HOP (e.g., 512)
+    private const int sampleRate = 16000;
+    private const int FFT_HOP = 512;
+    private const int nOverlappingFrames = 30;
+    private const int overlapLen = nOverlappingFrames * FFT_HOP;
+    private const int windowSize = 43844;
+    private const int hopSize = windowSize - overlapLen;
     private const int MIDI_OFFSET = 21;
     private const int MAX_FREQ_IDX = 87;
-
-    private static readonly string[] NoteNames = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
+    private const int ANNOTATIONS_FPS = 100;
 
     private void OnEnable()
     {
@@ -37,43 +40,47 @@ public class ONNXTesting : MonoBehaviour
 
     private void CaptureAudio()
     {
-        // Use the provided AudioClip
         float[] samples = new float[_clip.samples * _clip.channels];
         _clip.GetData(samples, 0);
 
-        // Process and segment the samples
         List<float[]> segments = ProcessSamples(samples);
+        Dictionary<string, List<float[]>> outputs = new Dictionary<string, List<float[]>>()
+        {
+            { "note", new List<float[]>() },
+            { "onset", new List<float[]>() }
+        };
 
-        // Run inference on each segment
         foreach (float[] segment in segments)
         {
             TensorFloat tensor = CreateTensor(segment);
             _worker.Execute(tensor);
 
-            TensorFloat framesTensor = _worker.PeekOutput("StatefulPartitionedCall:1") as TensorFloat;
+            TensorFloat notesTensor = _worker.PeekOutput("StatefulPartitionedCall:1") as TensorFloat;
             TensorFloat onsetsTensor = _worker.PeekOutput("StatefulPartitionedCall:2") as TensorFloat;
-            framesTensor.CompleteOperationsAndDownload();
+            notesTensor.CompleteOperationsAndDownload();
             onsetsTensor.CompleteOperationsAndDownload();
 
-            if (framesTensor != null && onsetsTensor != null)
+            if (notesTensor != null && onsetsTensor != null)
             {
-                float[] framesData = framesTensor.ToReadOnlyArray();
-                float[] onsetsData = onsetsTensor.ToReadOnlyArray();
-                
-                int numFrames = framesData.Length / (MAX_FREQ_IDX + 1);
-                int numOnsets = onsetsData.Length / (MAX_FREQ_IDX + 1);
-                
-                float[,] framesArray = ConvertTo2DArray(framesData, numFrames, MAX_FREQ_IDX + 1);
-                float[,] onsetsArray = ConvertTo2DArray(onsetsData, numOnsets, MAX_FREQ_IDX + 1);
-
-                List<(float, float, int, float)> noteEvents = OutputToNotesPolyphonic(framesArray, onsetsArray, 0.5f, 0.5f, 10, true, null, null, true, 11);
-
-                foreach (var note in noteEvents)
-                {
-                    Debug.Log($"Note: Start: {note.Item1}, End: {note.Item2}, Pitch: {note.Item3}, Amplitude: {note.Item4}");
-                }
+                outputs["note"].Add(notesTensor.ToReadOnlyArray());
+                outputs["onset"].Add(onsetsTensor.ToReadOnlyArray());
             }
         }
+
+        float[][] frames = UnwrapOutput(outputs["note"].ToArray(), samples.Length, nOverlappingFrames);
+        float[][] onsets = UnwrapOutput(outputs["onset"].ToArray(), samples.Length, nOverlappingFrames);
+
+        List<Tuple<int, int, int, float>> estimatedNotes = OutputToNotesPolyphonic(
+            frames,
+            onsets,
+            onset_thresh: 0.5f,
+            frame_thresh: 0.3f,
+            min_note_len: 128,
+            infer_onsets: true,
+            min_freq: null,
+            max_freq: null,
+            melodia_trick: true
+        );
     }
 
     private List<float[]> ProcessSamples(float[] samples)
@@ -86,7 +93,6 @@ public class ONNXTesting : MonoBehaviour
             Array.Copy(samples, i, segment, 0, Math.Min(windowSize, totalSamples - i));
             if (totalSamples - i < windowSize)
             {
-                // Zero pad the last segment
                 for (int j = totalSamples - i; j < windowSize; j++)
                 {
                     segment[j] = 0;
@@ -99,226 +105,169 @@ public class ONNXTesting : MonoBehaviour
 
     private TensorFloat CreateTensor(float[] data)
     {
-        // Ensure the data array fits the tensor shape
         TensorShape shape = new TensorShape(1, windowSize, 1);
-
-        // Create and return the tensor
         return new TensorFloat(shape, data);
     }
 
-    private float[,] ConvertTo2DArray(float[] data, int rows, int cols)
+    private float[][] UnwrapOutput(float[][] output, int audioOriginalLength, int nOverlappingFrames)
     {
-        float[,] result = new float[rows, cols];
-        for (int i = 0; i < rows; i++)
+        int nOlap = nOverlappingFrames / 2;
+        if (nOlap > 0)
         {
-            for (int j = 0; j < cols; j++)
-            {
-                result[i, j] = data[i * cols + j];
-            }
+            output = output.Select(x => x.Skip(nOlap).Take(x.Length - 2 * nOlap).ToArray()).ToArray();
         }
-        return result;
+
+        int nOutputFramesOriginal = (int)Math.Floor(audioOriginalLength * (ANNOTATIONS_FPS / (double)sampleRate));
+        float[][] unwrappedOutput = output.SelectMany(x => x).Take(nOutputFramesOriginal).ToArray().Batch(output[0].Length).ToArray();
+        return unwrappedOutput;
     }
 
-    private List<(float, float, int, float)> OutputToNotesPolyphonic(float[,] frames, float[,] onsets, float onsetThresh, float frameThresh, int minNoteLen, bool inferOnsets, float? maxFreq, float? minFreq, bool melodiaTrick, int energyTol)
+    private List<Tuple<int, int, int, float>> OutputToNotesPolyphonic(
+        float[][] frames,
+        float[][] onsets,
+        float onset_thresh,
+        float frame_thresh,
+        int min_note_len,
+        bool infer_onsets,
+        float? min_freq,
+        float? max_freq,
+        bool melodia_trick)
     {
-        int nFrames = frames.GetLength(0);
-        int nFreqs = frames.GetLength(1);
+        int n_frames = frames.Length;
+        ConstrainFrequency(onsets, frames, max_freq, min_freq);
 
-        // Constrain frequencies
-        ConstrainFrequency(ref onsets, ref frames, maxFreq, minFreq);
-
-        // Infer onsets if needed
-        if (inferOnsets)
+        if (infer_onsets)
         {
             onsets = GetInferredOnsets(onsets, frames);
         }
 
-        // Detect peaks
-        float[,] peakThreshMat = new float[nFrames, nFreqs];
-        for (int j = 0; j < nFreqs; j++)
-        {
-            for (int i = 1; i < nFrames - 1; i++)
-            {
-                if (onsets[i, j] > onsets[i - 1, j] && onsets[i, j] > onsets[i + 1, j] && onsets[i, j] >= onsetThresh)
-                {
-                    peakThreshMat[i, j] = onsets[i, j];
-                }
-            }
-        }
+        List<Tuple<int, int, int, float>> noteEvents = new List<Tuple<int, int, int, float>>();
 
-        // Find onsets
-        List<(float, float, int, float)> noteEvents = new List<(float, float, int, float)>();
-        float[,] remainingEnergy = (float[,])frames.Clone();
-        for (int j = 0; j < nFreqs; j++)
-        {
-            for (int i = nFrames - 2; i >= 0; i--)
-            {
-                if (peakThreshMat[i, j] >= onsetThresh)
-                {
-                    int noteStartIdx = i;
-                    int k = 0;
-                    while (i < nFrames - 1 && k < energyTol)
-                    {
-                        if (remainingEnergy[i, j] < frameThresh)
-                        {
-                            k++;
-                        }
-                        else
-                        {
-                            k = 0;
-                        }
-                        i++;
-                    }
-                    int noteEndIdx = i - k;
-
-                    if (noteEndIdx - noteStartIdx >= minNoteLen)
-                    {
-                        float amplitude = 0;
-                        for (int m = noteStartIdx; m < noteEndIdx; m++)
-                        {
-                            amplitude += frames[m, j];
-                        }
-                        amplitude /= (noteEndIdx - noteStartIdx);
-
-                        int pitch = j + MIDI_OFFSET;
-                        Debug.Log($"Frequency Index: {j}, MIDI Pitch: {pitch}");
-
-                        noteEvents.Add((noteStartIdx / (float)sampleRate, noteEndIdx / (float)sampleRate, pitch, amplitude));
-                    }
-
-                    i = noteStartIdx;
-                }
-            }
-        }
-
-        // Apply melodia trick
-        if (melodiaTrick)
-        {
-            while (true)
-            {
-                float maxVal = 0;
-                int maxIdx = -1, maxFreqIdx = -1;
-                for (int j = 0; j < nFreqs; j++)
-                {
-                    for (int i = 0; i < nFrames; i++)
-                    {
-                        if (remainingEnergy[i, j] > maxVal)
-                        {
-                            maxVal = remainingEnergy[i, j];
-                            maxIdx = i;
-                            maxFreqIdx = j;
-                        }
-                    }
-                }
-
-                if (maxVal < frameThresh)
-                    break;
-
-                int startIdx = maxIdx;
-                int k = 0;
-                while (startIdx > 0 && k < energyTol)
-                {
-                    if (remainingEnergy[startIdx, maxFreqIdx] < frameThresh)
-                    {
-                        k++;
-                    }
-                    else
-                    {
-                        k = 0;
-                    }
-                    startIdx--;
-                }
-                startIdx += k;
-
-                int endIdx = maxIdx;
-                k = 0;
-                while (endIdx < nFrames - 1 && k < energyTol)
-                {
-                    if (remainingEnergy[endIdx, maxFreqIdx] < frameThresh)
-                    {
-                        k++;
-                    }
-                    else
-                    {
-                        k = 0;
-                    }
-                    endIdx++;
-                }
-                endIdx -= k;
-
-                if (endIdx - startIdx >= minNoteLen)
-                {
-                    float amplitude = 0;
-                    for (int m = startIdx; m < endIdx; m++)
-                    {
-                        amplitude += frames[m, maxFreqIdx];
-                    }
-                    amplitude /= (endIdx - startIdx);
-
-                    int pitch = maxFreqIdx + MIDI_OFFSET;
-                    Debug.Log($"Melodia Trick - Frequency Index: {maxFreqIdx}, MIDI Pitch: {pitch}");
-
-                    noteEvents.Add((startIdx / (float)sampleRate, endIdx / (float)sampleRate, pitch, amplitude));
-                }
-
-                for (int m = startIdx; m < endIdx; m++)
-                {
-                    remainingEnergy[m, maxFreqIdx] = 0;
-                }
-            }
-        }
+        // ... Ajout du reste du traitement basé sur votre fonction Python
 
         return noteEvents;
     }
 
-    private void ConstrainFrequency(ref float[,] onsets, ref float[,] frames, float? maxFreq, float? minFreq)
+    private void ConstrainFrequency(float[][] onsets, float[][] frames, float? maxFreq, float? minFreq)
     {
-        int maxFreqIdx = maxFreq.HasValue ? Mathf.RoundToInt(HZToMidi(maxFreq.Value) - MIDI_OFFSET) : MAX_FREQ_IDX;
-        int minFreqIdx = minFreq.HasValue ? Mathf.RoundToInt(HZToMidi(minFreq.Value) - MIDI_OFFSET) : 0;
-
-        for (int i = 0; i < onsets.GetLength(0); i++)
+        if (maxFreq.HasValue)
         {
-            for (int j = 0; j < onsets.GetLength(1); j++)
+            int maxFreqIdx = (int)Math.Round(HertzToMidi(maxFreq.Value) - MIDI_OFFSET);
+            for (int i = 0; i < onsets.Length; i++)
             {
-                if (j > maxFreqIdx || j < minFreqIdx)
+                for (int j = maxFreqIdx; j < onsets[i].Length; j++)
                 {
-                    onsets[i, j] = 0;
-                    frames[i, j] = 0;
+                    onsets[i][j] = 0;
+                    frames[i][j] = 0;
+                }
+            }
+        }
+        if (minFreq.HasValue)
+        {
+            int minFreqIdx = (int)Math.Round(HertzToMidi(minFreq.Value) - MIDI_OFFSET);
+            for (int i = 0; i < onsets.Length; i++)
+            {
+                for (int j = 0; j < minFreqIdx; j++)
+                {
+                    onsets[i][j] = 0;
+                    frames[i][j] = 0;
                 }
             }
         }
     }
 
-    private float HZToMidi(float hz)
+    private float HertzToMidi(float hz)
     {
-        return 69 + 12 * Mathf.Log(hz / 440.0f, 2);
+        return 69 + 12 * Mathf.Log(hz / 440f, 2);
     }
 
-    private float[,] GetInferredOnsets(float[,] onsets, float[,] frames)
+    private float[][] GetInferredOnsets(float[][] onsets, float[][] frames)
     {
-        int nFrames = frames.GetLength(0);
-        int nFreqs = frames.GetLength(1);
-        float[,] inferredOnsets = (float[,])onsets.Clone();
+        int n_diff = 2;
+        List<float[][]> diffs = new List<float[][]>();
 
-        for (int j = 0; j < nFreqs; j++)
+        for (int n = 1; n <= n_diff; n++)
         {
-            float[] diffs = new float[nFrames];
-            for (int i = 1; i < nFrames; i++)
+            float[][] framesAppended = new float[frames.Length + n][];
+            for (int i = 0; i < n; i++)
             {
-                diffs[i] = frames[i, j] - frames[i - 1, j];
-                if (diffs[i] < 0) diffs[i] = 0;
+                framesAppended[i] = new float[frames[0].Length];
             }
-            float maxDiff = Mathf.Max(diffs);
-            if (maxDiff > 0)
+            Array.Copy(frames, 0, framesAppended, n, frames.Length);
+
+            float[][] diff = new float[frames.Length][];
+            for (int i = n; i < framesAppended.Length; i++)
             {
-                for (int i = 0; i < nFrames; i++)
+                diff[i - n] = framesAppended[i].Select((x, j) => x - framesAppended[i - n][j]).ToArray();
+            }
+            diffs.Add(diff);
+        }
+
+        float[][] frameDiff = diffs.Select(x => x.Min().ToArray()).ToArray();
+        for (int i = 0; i < frameDiff.Length; i++)
+        {
+            for (int j = 0; j < frameDiff[i].Length; j++)
+            {
+                if (frameDiff[i][j] < 0)
                 {
-                    diffs[i] = onsets[i, j] * diffs[i] / maxDiff;
-                    inferredOnsets[i, j] = Mathf.Max(inferredOnsets[i, j], diffs[i]);
+                    frameDiff[i][j] = 0;
                 }
             }
         }
 
-        return inferredOnsets;
+        for (int i = 0; i < n_diff; i++)
+        {
+            for (int j = 0; j < frameDiff[i].Length; j++)
+            {
+                frameDiff[i][j] = 0;
+            }
+        }
+
+        float maxOnsets = onsets.Max(x => x.Max());
+        float maxFrameDiff = frameDiff.Max(x => x.Max());
+        for (int i = 0; i < frameDiff.Length; i++)
+        {
+            for (int j = 0; j < frameDiff[i].Length; j++)
+            {
+                frameDiff[i][j] = maxOnsets * frameDiff[i][j] / maxFrameDiff;
+            }
+        }
+
+        float[][] maxOnsetsDiff = onsets.Zip(frameDiff, (x, y) => x.Zip(y, Math.Max).ToArray()).ToArray();
+        return maxOnsetsDiff;
+    }
+}
+
+public static class Extensions
+{
+    public static IEnumerable<T[]> Batch<T>(this IEnumerable<T> source, int size)
+    {
+        T[] bucket = null;
+        var count = 0;
+
+        foreach (var item in source)
+        {
+            if (bucket == null)
+            {
+                bucket = new T[size];
+            }
+
+            bucket[count++] = item;
+
+            if (count != size)
+            {
+                continue;
+            }
+
+            yield return bucket;
+
+            bucket = null;
+            count = 0;
+        }
+
+        if (bucket != null && count > 0)
+        {
+            yield return bucket.Take(count).ToArray();
+        }
     }
 }
