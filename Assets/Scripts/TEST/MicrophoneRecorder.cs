@@ -5,19 +5,19 @@ using Unity.Sentis;
 public class MicrophoneRecorder : MonoBehaviour
 {
     [SerializeField] private ModelAsset _modelAsset;
-    
+
     private IWorker _worker;
     private Model _runtimeModel;
 
     private const int SampleRate = 22050;
-    private const float RecordingLength = 0.2f; // 0.3 seconds
+    private const float RecordingLength = 0.1f; // Durée des segments en secondes
     private const int FFT_HOP = 256;
-    private const int TargetSampleSize = 43844;
+    private const int TargetSampleSize = 43844; // Correspond à AUDIO_N_SAMPLES dans le code Python
     private const int MinFramesForActivation = 11; // Minimum frames to consider a note as played
 
     private AudioSource audioSource;
     private string microphone;
-    
+
     private void OnEnable()
     {
         _runtimeModel = ModelLoader.Load(_modelAsset);
@@ -26,7 +26,7 @@ public class MicrophoneRecorder : MonoBehaviour
 
     void Start()
     {
-        // Affiche tous les microphones disponibles
+        // Vérifie si des microphones sont disponibles
         if (Microphone.devices.Length > 0)
         {
             Debug.Log("Microphones disponibles :");
@@ -37,7 +37,7 @@ public class MicrophoneRecorder : MonoBehaviour
 
             // Sélectionne le premier microphone disponible
             microphone = Microphone.devices[0];
-            audioSource = gameObject.GetComponent<AudioSource>();
+            audioSource = gameObject.AddComponent<AudioSource>();
             StartCoroutine(RecordMicrophone());
         }
         else
@@ -59,21 +59,19 @@ public class MicrophoneRecorder : MonoBehaviour
             // Attendre la durée de l'enregistrement
             yield return new WaitForSeconds(RecordingLength);
 
-            // Jouer l'audio capturé
-            audioSource.Play();
-
             // Récupère les données audio de l'AudioSource
             float[] audioData = new float[audioSource.clip.samples];
             audioSource.clip.GetData(audioData, 0);
 
-            // Crée un tableau de la taille cible
+            // Crée un tableau de la taille cible avec padding
             float[] paddedData = new float[TargetSampleSize];
             int copyLength = Mathf.Min(audioData.Length, TargetSampleSize);
             System.Array.Copy(audioData, paddedData, copyLength);
 
             // Affiche le tableau dans la console
-            Debug.Log("Captured audio data: " + string.Join(", ", paddedData));
-            
+            //Debug.Log("Captured audio data: " + string.Join(", ", paddedData));
+
+            // Préparer les données comme une seule fenêtre d'entrée
             TensorFloat tensor = CreateTensor(paddedData);
             _worker.Execute(tensor);
 
@@ -83,16 +81,19 @@ public class MicrophoneRecorder : MonoBehaviour
             onsetsTensor.CompleteOperationsAndDownload();
             var note = notesTensor.ToReadOnlyArray();
             var onsets = onsetsTensor.ToReadOnlyArray();
-            
+
             // Restructure notes and onsets to 2D arrays
             float[,] notes2D = ReshapeTo2D(note, 172, 88);
             float[,] onsets2D = ReshapeTo2D(onsets, 172, 88);
-            
+
             // Vérifie les activations prolongées des notes
-            CheckProlongedNoteActivations(onsets2D);
+            CheckProlongedNoteActivations(notes2D);
+
+            // Arrêter la capture audio
+            Microphone.End(microphone);
 
             // Pause avant le prochain enregistrement
-            yield return new WaitForSeconds(RecordingLength);
+            //yield return new WaitForSeconds(RecordingLength);
         }
     }
 
