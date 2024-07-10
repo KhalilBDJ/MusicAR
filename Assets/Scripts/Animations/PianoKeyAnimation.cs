@@ -50,8 +50,8 @@ public class PianoKeyAnimation : MonoBehaviour
 
     private void Start()
     {
-        tutorial = GameManager.Instance.isTutorialMode;
-       //tutorial = false;
+        //tutorial = GameManager.Instance.isTutorialMode;
+        tutorial = false;
         if (tutorial)
         {
             transform.localPosition = new Vector3(transform.localPosition.x, transform.localPosition.y + 1f, transform.localPosition.z);

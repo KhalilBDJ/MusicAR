@@ -13,7 +13,7 @@ public class MicrophoneRecorder : MonoBehaviour
     private Model _runtimeModel;
 
     private const int SampleRate = 22050;
-    private const float RecordingLength = 0.2f; // Durée des segments en secondes
+    private const float RecordingLength = 0.3f; // Durée des segments en secondes
     private const int FFT_HOP = 256;
     private const int TargetSampleSize = 43844; // Correspond à AUDIO_N_SAMPLES dans le code Python
     private const int MinFramesForActivation = 3; // Minimum frames to consider une note as played
@@ -27,6 +27,7 @@ public class MicrophoneRecorder : MonoBehaviour
 
     public event EventHandler<NotePlayedEventArgs> NoteChanged;
     public PianoKeyPool pianoKeyPool;
+    public AudioClip _clip;
 
     private List<string> previousNotes = new List<string>();
     private Dictionary<string, GameObject> activeKeys = new Dictionary<string, GameObject>();
@@ -44,24 +45,19 @@ public class MicrophoneRecorder : MonoBehaviour
         // Vérifie si des microphones sont disponibles
         if (Microphone.devices.Length > 0)
         {
-            Debug.Log("Microphones disponibles :");
-            foreach (var device in Microphone.devices)
-            {
-                Debug.Log(device);
-            }
 
             // Sélectionne le premier microphone disponible
             microphone = Microphone.devices[0];
-            audioSource = gameObject.AddComponent<AudioSource>();
+            audioSource = gameObject.GetComponent<AudioSource>();
             StartCoroutine(RecordMicrophone());
         }
         else
         {
             Debug.LogError("Aucun microphone n'est connecté.");
         }
-
+       // StartCoroutine(Testing());
         // Initialiser la variable tutorial
-        tutorial = GameManager.Instance.isTutorialMode;
+        tutorial = false; //GameManager.Instance.isTutorialMode;
     }
 
     private IEnumerator RecordMicrophone()
@@ -105,7 +101,11 @@ public class MicrophoneRecorder : MonoBehaviour
             float[,] onsets2D = ReshapeTo2D(onsets, 172, 88);
 
             // Mise à jour des notes jouées
-            List<string> detectedNotes = UpdateActiveNotes(onsets2D, notes2D, 0.5f, 0.3f);
+            List<string> detectedNotes = UpdateActiveNotes(onsets2D, notes2D, 0.6f, 0.3f);
+            foreach (var notes in detectedNotes)
+            {
+                Debug.Log(notes);
+            }
 
             // Gérer les notes détectées et arrêtées
             HandleDetectedNotes(detectedNotes);
@@ -116,6 +116,48 @@ public class MicrophoneRecorder : MonoBehaviour
             // Pause avant le prochain enregistrement
            // yield return new WaitForSeconds(RecordingLength);
         }
+    }
+
+    private IEnumerator Testing()
+    {
+
+        yield return new WaitForSeconds(1f);
+        // Démarre la capture audio depuis le microphone
+        audioSource.clip = _clip;
+        audioSource.Play();
+
+        // Récupère les données audio de l'AudioSource
+        float[] audioData = new float[audioSource.clip.samples];
+        audioSource.clip.GetData(audioData, 0);
+
+        // Crée un tableau de la taille cible avec padding
+        float[] paddedData = new float[TargetSampleSize];
+        int copyLength = Mathf.Min(audioData.Length, TargetSampleSize);
+        System.Array.Copy(audioData, paddedData, copyLength);
+
+        /*// Affiche le tableau dans la console
+        Debug.Log("Captured audio data: " + string.Join(", ", paddedData));*/
+
+        // Préparer les données comme une seule fenêtre d'entrée
+        TensorFloat tensor = CreateTensor(paddedData);
+        _worker.Execute(tensor);
+
+        TensorFloat notesTensor = _worker.PeekOutput("StatefulPartitionedCall:1") as TensorFloat;
+        TensorFloat onsetsTensor = _worker.PeekOutput("StatefulPartitionedCall:2") as TensorFloat;
+        notesTensor.CompleteOperationsAndDownload();
+        onsetsTensor.CompleteOperationsAndDownload();
+        var note = notesTensor.ToReadOnlyArray();
+        var onsets = onsetsTensor.ToReadOnlyArray();
+
+        // Restructure notes and onsets to 2D arrays
+        float[,] notes2D = ReshapeTo2D(note, 172, 88);
+        float[,] onsets2D = ReshapeTo2D(onsets, 172, 88);
+
+        // Mise à jour des notes jouées
+        List<string> detectedNotes = UpdateActiveNotes(onsets2D, notes2D, 0.5f, 0.3f);
+
+        // Gérer les notes détectées et arrêtées
+        HandleDetectedNotes(detectedNotes);
     }
 
     private void OnDisable()

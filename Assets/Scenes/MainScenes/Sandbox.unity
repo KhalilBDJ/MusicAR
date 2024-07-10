@@ -140,32 +140,32 @@ PrefabInstance:
     - target: {fileID: 3495206090664824032, guid: 1b09b34a8099a454c929f6bf91ab5997,
         type: 3}
       propertyPath: m_LocalScale.x
-      value: 7
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3495206090664824032, guid: 1b09b34a8099a454c929f6bf91ab5997,
         type: 3}
       propertyPath: m_LocalScale.y
-      value: 7
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3495206090664824032, guid: 1b09b34a8099a454c929f6bf91ab5997,
         type: 3}
       propertyPath: m_LocalScale.z
-      value: 7
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3495206090664824032, guid: 1b09b34a8099a454c929f6bf91ab5997,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: -3.5
+      value: -0.49
       objectReference: {fileID: 0}
     - target: {fileID: 3495206090664824032, guid: 1b09b34a8099a454c929f6bf91ab5997,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0
+      value: 0.67
       objectReference: {fileID: 0}
     - target: {fileID: 3495206090664824032, guid: 1b09b34a8099a454c929f6bf91ab5997,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0
+      value: -8.33
       objectReference: {fileID: 0}
     - target: {fileID: 3495206090664824032, guid: 1b09b34a8099a454c929f6bf91ab5997,
         type: 3}
@@ -784,7 +784,7 @@ GameObject:
   - component: {fileID: 1866751825}
   m_Layer: 0
   m_Name: Scripts
-  m_TagString: Untagged
+  m_TagString: Script
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -917,6 +917,7 @@ MonoBehaviour:
   _modelAsset: {fileID: 5022602860645237092, guid: 2d31493567824884f94848426be5d7b2,
     type: 3}
   pianoKeyPool: {fileID: 1866751825}
+  _clip: {fileID: 8300000, guid: 0cca8757fea81dd40897bd73e6fcb605, type: 3}
 --- !u!114 &1866751825
 MonoBehaviour:
   m_ObjectHideFlags: 0

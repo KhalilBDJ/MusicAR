@@ -60,8 +60,8 @@ public class PianoKeyPool : MonoBehaviour
     {
         for (int i = 0; i < size; i++)
         {
-            GameObject noteObject = Instantiate(prefab, pianoGameObject.transform);
-            noteObject.SetActive(false);
+            GameObject noteObject = Instantiate(prefab, pianoGameObject.transform); 
+            noteObject.SetActive(false); 
             pool.Enqueue(noteObject);
         }
     }
