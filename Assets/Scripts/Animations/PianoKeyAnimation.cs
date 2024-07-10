@@ -8,7 +8,7 @@ public class PianoKeyAnimation : MonoBehaviour
 
     private float growthRate = 0.05f;
     public string noteName; // Ajouté pour stocker le nom de la note
-    private AudioAnalyzer analyzer;
+    private MicrophoneRecorder analyzer;
     private GameObject scripts;
 
     private bool isPlaying;
@@ -24,7 +24,7 @@ public class PianoKeyAnimation : MonoBehaviour
     void Awake()
     {
         scripts = GameObject.FindGameObjectWithTag("Script");
-        analyzer = scripts.GetComponent<AudioAnalyzer>();
+        analyzer = scripts.GetComponent<MicrophoneRecorder>();
         pianoKeyPool = FindObjectOfType<PianoKeyPool>();
         initialScale = transform.localScale; // Sauvegarde de l'échelle initiale
     }
