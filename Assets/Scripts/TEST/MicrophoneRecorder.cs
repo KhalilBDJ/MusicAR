@@ -8,6 +8,7 @@ using System;
 public class MicrophoneRecorder : MonoBehaviour
 {
     [SerializeField] private ModelAsset _modelAsset;
+    [SerializeField] private AudioClip _clip;
 
     private IWorker _worker;
     private Model _runtimeModel;
@@ -27,17 +28,23 @@ public class MicrophoneRecorder : MonoBehaviour
 
     public event EventHandler<NotePlayedEventArgs> NoteChanged;
     public PianoKeyPool pianoKeyPool;
-    public AudioClip _clip;
 
     private List<string> previousNotes = new List<string>();
     private Dictionary<string, GameObject> activeKeys = new Dictionary<string, GameObject>();
 
     private bool tutorial;
 
+    private float[] audioData;
+    private float[] paddedData;
+
     private void OnEnable()
     {
         _runtimeModel = ModelLoader.Load(_modelAsset);
         _worker = WorkerFactory.CreateWorker(BackendType.GPUCompute, _runtimeModel);
+
+        // Initialiser les tableaux pour réutilisation
+        audioData = new float[TargetSampleSize];
+        paddedData = new float[TargetSampleSize];
     }
 
     void Start()
@@ -45,7 +52,6 @@ public class MicrophoneRecorder : MonoBehaviour
         // Vérifie si des microphones sont disponibles
         if (Microphone.devices.Length > 0)
         {
-
             // Sélectionne le premier microphone disponible
             microphone = Microphone.devices[0];
             audioSource = gameObject.GetComponent<AudioSource>();
@@ -55,35 +61,27 @@ public class MicrophoneRecorder : MonoBehaviour
         {
             Debug.LogError("Aucun microphone n'est connecté.");
         }
-       // StartCoroutine(Testing());
+
         // Initialiser la variable tutorial
         tutorial = false; //GameManager.Instance.isTutorialMode;
     }
 
     private IEnumerator RecordMicrophone()
     {
+        // Démarre la capture audio depuis le microphone
+        audioSource.clip = Microphone.Start(microphone, true, 1, SampleRate);
+
+        // Attendre que la capture commence
+        yield return new WaitUntil(() => Microphone.GetPosition(microphone) > 0);
+
         while (true)
         {
-            // Démarre la capture audio depuis le microphone
-            audioSource.clip = Microphone.Start(microphone, true, 1, SampleRate);
-
-            // Attendre que la capture commence
-            yield return new WaitUntil(() => Microphone.GetPosition(microphone) > 0);
-
-            // Attendre la durée de l'enregistrement
-            yield return new WaitForSeconds(RecordingLength);
-
             // Récupère les données audio de l'AudioSource
-            float[] audioData = new float[audioSource.clip.samples];
-            audioSource.clip.GetData(audioData, 0);
+            int micPosition = Microphone.GetPosition(microphone);
+            audioSource.clip.GetData(audioData, micPosition);
 
             // Crée un tableau de la taille cible avec padding
-            float[] paddedData = new float[TargetSampleSize];
-            int copyLength = Mathf.Min(audioData.Length, TargetSampleSize);
-            System.Array.Copy(audioData, paddedData, copyLength);
-
-            /*// Affiche le tableau dans la console
-            Debug.Log("Captured audio data: " + string.Join(", ", paddedData));*/
+            System.Array.Copy(audioData, paddedData, Mathf.Min(audioData.Length, TargetSampleSize));
 
             // Préparer les données comme une seule fenêtre d'entrée
             TensorFloat tensor = CreateTensor(paddedData);
@@ -109,20 +107,17 @@ public class MicrophoneRecorder : MonoBehaviour
 
             // Gérer les notes détectées et arrêtées
             HandleDetectedNotes(detectedNotes);
-
-            // Arrêter la capture audio
-            Microphone.End(microphone);
-
-            // Pause avant le prochain enregistrement
-           // yield return new WaitForSeconds(RecordingLength);
+            
+            // Attendre la durée de l'enregistrement
+            yield return new WaitForSeconds(RecordingLength);
         }
     }
 
     private IEnumerator Testing()
     {
-
         yield return new WaitForSeconds(1f);
-        // Démarre la capture audio depuis le microphone
+
+        // Démarre la capture audio depuis l'audio clip
         audioSource.clip = _clip;
         audioSource.Play();
 
@@ -134,9 +129,6 @@ public class MicrophoneRecorder : MonoBehaviour
         float[] paddedData = new float[TargetSampleSize];
         int copyLength = Mathf.Min(audioData.Length, TargetSampleSize);
         System.Array.Copy(audioData, paddedData, copyLength);
-
-        /*// Affiche le tableau dans la console
-        Debug.Log("Captured audio data: " + string.Join(", ", paddedData));*/
 
         // Préparer les données comme une seule fenêtre d'entrée
         TensorFloat tensor = CreateTensor(paddedData);
@@ -163,6 +155,7 @@ public class MicrophoneRecorder : MonoBehaviour
     private void OnDisable()
     {
         _worker.Dispose();
+        Microphone.End(microphone);
     }
 
     private TensorFloat CreateTensor(float[] data)
