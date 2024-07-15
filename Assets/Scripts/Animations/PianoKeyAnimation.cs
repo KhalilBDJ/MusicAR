@@ -60,69 +60,67 @@ public class PianoKeyAnimation : MonoBehaviour
         
     }
 
-    void Update()
+   void Update()
+{
+    if (!tutorial)
     {
-        if (!tutorial)
+        if (isPlaying)
         {
-            if (isPlaying)
-            {
-                // Fait grandir la note uniquement vers le haut (en augmentant sa taille et en ajustant sa position pour qu'elle grandisse vers le haut)
-                float growthAmount = growthRate * Time.deltaTime;
-                transform.localScale += new Vector3(0, growthAmount, 0);
-                transform.localPosition += new Vector3(0, growthAmount / 2, 0); // Ajuste la position pour que la croissance semble se faire vers le haut
-            }
-            
-            else
-            {
-                // Une fois la note arrêtée, elle se détache et monte indéfiniment
-                transform.localPosition += new Vector3(0, growthRate, 0) * Time.deltaTime;
-            }
-
-            // Si la note doit être retournée au pool et s'éloigne suffisamment, la remettre au pool
-            if (shouldReturnToPool && transform.localPosition.y > 50) // Condition modifiée pour utiliser la position en y
-            {
-                shouldReturnToPool = false;
-                pianoKeyPool.ReturnNoteObject(gameObject, noteName);
-            }
+            // Fait grandir la note uniquement vers le haut (en augmentant sa taille et en ajustant sa position pour qu'elle grandisse vers le haut)
+            float growthAmount = growthRate * Time.deltaTime;
+            transform.localScale += new Vector3(0, growthAmount, 0);
+            transform.localPosition += new Vector3(0, growthAmount / 2, 0); // Ajuste la position pour que la croissance semble se faire vers le haut
         }
         else
         {
-            
-            // Calculer la vitesse pour que le point P traverse la note en '_duration' secondes.
-            float requiredSpeed = 0.1f;
+            // Une fois la note arrêtée, elle se détache et monte indéfiniment
+            transform.localPosition += new Vector3(0, growthRate, 0) * Time.deltaTime;
+        }
 
-            transform.localScale = new Vector3(transform.localScale.x, (requiredSpeed * _duration)/2,
-                transform.localScale.z);
-
-            // Appliquer la vitesse ajustée
-            transform.localPosition += new Vector3(0, -requiredSpeed, 0) * Time.deltaTime;
-
-            if (!isPlaying)
-            {
-                transform.localScale = new Vector3(transform.localScale.x, _duration/10, transform.localScale.z);
-            }
-
-            if (transform.localPosition.y >= contactObject.transform.localPosition.y - transform.localScale.y && transform.localPosition.y <= contactObject.transform.localPosition.y + transform.localScale.y/2)
-            {
-                if (!_currentNotes.Contains(noteName))
-                {
-                    GetComponent<Renderer>().material.color = Color.red;
-                }
-                else
-                {
-                    GetComponent<Renderer>().material.color = Color.blue;
-                }
-            }
-
-            if (transform.localPosition.y <= contactObject.transform.localPosition.y - transform.localScale.y)
-            {
-                isPlaying = true;
-                transform.localScale = initialScale; 
-                pianoKeyPool.ReturnNoteObject(gameObject, noteName);
-                StopNote();
-            }
+        // Si la note doit être retournée au pool et s'éloigne suffisamment, la remettre au pool
+        if (shouldReturnToPool && transform.localPosition.y > 50) // Condition modifiée pour utiliser la position en y
+        {
+            shouldReturnToPool = false;
+            pianoKeyPool.ReturnNoteObject(gameObject, noteName);
         }
     }
+    else
+    {
+        // Calculer la vitesse pour que le point P traverse la note en '_duration' secondes.
+        float requiredSpeed = 0.1f;
+
+        transform.localScale = new Vector3(transform.localScale.x, (requiredSpeed * _duration) / 2, transform.localScale.z);
+
+        // Appliquer la vitesse ajustée
+        transform.localPosition += new Vector3(0, -requiredSpeed, 0) * Time.deltaTime;
+
+        if (!isPlaying)
+        {
+            transform.localScale = new Vector3(transform.localScale.x, _duration / 10, transform.localScale.z);
+        }
+
+        if (transform.localPosition.y >= contactObject.transform.localPosition.y - transform.localScale.y && transform.localPosition.y <= contactObject.transform.localPosition.y + transform.localScale.y / 2)
+        {
+            if (!_currentNotes.Contains(noteName))
+            {
+                GetComponent<Renderer>().material.color = Color.red;
+            }
+            else
+            {
+                GetComponent<Renderer>().material.color = Color.blue;
+            }
+        }
+
+        if (transform.localPosition.y <= contactObject.transform.localPosition.y - transform.localScale.y)
+        {
+            isPlaying = true;
+            transform.localScale = initialScale;
+            pianoKeyPool.ReturnNoteObject(gameObject, noteName);
+            StopNote();
+        }
+    }
+}
+
 
     private void OnNotesChanged(object sender, NotePlayedEventArgs e)
     {

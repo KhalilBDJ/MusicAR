@@ -14,8 +14,7 @@ public class MicrophoneRecorder : MonoBehaviour
     private Model _runtimeModel;
 
     private const int SampleRate = 22050;
-    private const float RecordingLength = 0.3f; // Durée des segments en secondes
-    private const int FFT_HOP = 256;
+    private const float RecordingLength = 0.1f; // Durée des segments en secondes
     private const int TargetSampleSize = 43844; // Correspond à AUDIO_N_SAMPLES dans le code Python
     private const int MinFramesForActivation = 3; // Minimum frames to consider une note as played
     private const int EnergyTol = 11; // Tolérance de l'énergie pour maintenir une note active
@@ -78,10 +77,19 @@ public class MicrophoneRecorder : MonoBehaviour
         {
             // Récupère les données audio de l'AudioSource
             int micPosition = Microphone.GetPosition(microphone);
-            audioSource.clip.GetData(audioData, micPosition);
+            int samplesToRead = Mathf.Min((int)(RecordingLength * SampleRate), TargetSampleSize);
+            audioSource.clip.GetData(audioData, micPosition - samplesToRead);
+
+            // Afficher des informations de débogage sur la capture
+            Debug.Log($"Mic position: {micPosition}");
+            Debug.Log($"Samples to read: {samplesToRead}");
 
             // Crée un tableau de la taille cible avec padding
-            System.Array.Copy(audioData, paddedData, Mathf.Min(audioData.Length, TargetSampleSize));
+            Array.Clear(paddedData, 0, paddedData.Length);
+            Array.Copy(audioData, paddedData, samplesToRead);
+
+            // Afficher des informations de débogage sur les données audio capturées
+            Debug.Log($"Captured audio data length: {samplesToRead}");
 
             // Préparer les données comme une seule fenêtre d'entrée
             TensorFloat tensor = CreateTensor(paddedData);
@@ -97,6 +105,10 @@ public class MicrophoneRecorder : MonoBehaviour
             // Restructure notes and onsets to 2D arrays
             float[,] notes2D = ReshapeTo2D(note, 172, 88);
             float[,] onsets2D = ReshapeTo2D(onsets, 172, 88);
+
+            // Afficher des informations de débogage sur les tableaux d'onsets et de notes
+            Debug.Log($"Onsets shape: {onsets2D.GetLength(0)}x{onsets2D.GetLength(1)}");
+            Debug.Log($"Notes shape: {notes2D.GetLength(0)}x{notes2D.GetLength(1)}");
 
             // Mise à jour des notes jouées
             List<string> detectedNotes = UpdateActiveNotes(onsets2D, notes2D, 0.6f, 0.3f);
