@@ -4,13 +4,11 @@ using Unity.Sentis;
 using System.Collections.Generic;
 using System.Linq;
 using System;
-using Unity.VisualScripting;
-using UnityEngine.Serialization;
 
 public class MicrophoneRecorder : MonoBehaviour
 {
-    [FormerlySerializedAs("_modelAsset")] [SerializeField] private ModelAsset modelAsset;
-    [FormerlySerializedAs("_clip")] [SerializeField] private AudioClip clip;
+    [SerializeField] private ModelAsset _modelAsset;
+    [SerializeField] private AudioClip _clip;
 
     private IWorker _worker;
     private Model _runtimeModel;
@@ -21,32 +19,31 @@ public class MicrophoneRecorder : MonoBehaviour
     private const int MinFramesForActivation = 3; // Minimum frames to consider une note as played
     private const int EnergyTol = 11; // Tolérance de l'énergie pour maintenir une note active
 
-    private AudioSource _audioSource;
-    private string _microphone;
+    private AudioSource audioSource;
+    private string microphone;
 
-    private readonly Dictionary<string, int> _noteEnergyCount = new Dictionary<string, int>();
+    private HashSet<string> activeNotes = new HashSet<string>();
+    private Dictionary<string, int> noteEnergyCount = new Dictionary<string, int>();
 
     public event EventHandler<NotePlayedEventArgs> NoteChanged;
     public PianoKeyPool pianoKeyPool;
 
-    private List<string> _previousNotes = new List<string>();
+    private List<string> previousNotes = new List<string>();
     private Dictionary<string, GameObject> activeKeys = new Dictionary<string, GameObject>();
 
-    private bool _tutorial;
+    private bool tutorial;
 
-    private float[] _audioData;
-    private float[] _paddedData;
-    private List<string> _activeNotes = new List<string>();
-    private Dictionary<int, int> _potentialNotes = new Dictionary<int, int>();
+    private float[] audioData;
+    private float[] paddedData;
 
     private void OnEnable()
     {
-        _runtimeModel = ModelLoader.Load(modelAsset);
+        _runtimeModel = ModelLoader.Load(_modelAsset);
         _worker = WorkerFactory.CreateWorker(BackendType.GPUCompute, _runtimeModel);
 
         // Initialiser les tableaux pour réutilisation
-        _audioData = new float[TargetSampleSize];
-        _paddedData = new float[TargetSampleSize];
+        audioData = new float[TargetSampleSize];
+        paddedData = new float[TargetSampleSize];
     }
 
     void Start()
@@ -55,8 +52,8 @@ public class MicrophoneRecorder : MonoBehaviour
         if (Microphone.devices.Length > 0)
         {
             // Sélectionne le premier microphone disponible
-            _microphone = Microphone.devices[0];
-            _audioSource = gameObject.GetComponent<AudioSource>();
+            microphone = Microphone.devices[0];
+            audioSource = gameObject.GetComponent<AudioSource>();
             StartCoroutine(RecordMicrophone());
         }
         else
@@ -65,61 +62,99 @@ public class MicrophoneRecorder : MonoBehaviour
         }
 
         // Initialiser la variable tutorial
-        _tutorial = false; //GameManager.Instance.isTutorialMode;
+        tutorial = false; //GameManager.Instance.isTutorialMode;
     }
 
     private IEnumerator RecordMicrophone()
     {
         // Démarre la capture audio depuis le microphone
-        _audioSource.clip = Microphone.Start(_microphone, true, 2, SampleRate);
+        audioSource.clip = Microphone.Start(microphone, true, 1, SampleRate);
 
         // Attendre que la capture commence
-        yield return new WaitUntil(() => Microphone.GetPosition(_microphone) > 0);
+        yield return new WaitUntil(() => Microphone.GetPosition(microphone) > 0);
 
         while (true)
         {
             // Récupère les données audio de l'AudioSource
-            int micPosition = Microphone.GetPosition(_microphone);
-            int samplesToRead = Mathf.Min((int)(RecordingLength * SampleRate), TargetSampleSize);
-            _audioSource.clip.GetData(_audioData, micPosition - samplesToRead);
-
-            Debug.Log(_audioData.Length);
+            int micPosition = Microphone.GetPosition(microphone);
+            audioSource.clip.GetData(audioData, micPosition);
 
             // Crée un tableau de la taille cible avec padding
-            System.Array.Copy(_audioData, _paddedData, Mathf.Min(_audioData.Length, TargetSampleSize));
+            System.Array.Copy(audioData, paddedData, Mathf.Min(audioData.Length, TargetSampleSize));
 
             // Préparer les données comme une seule fenêtre d'entrée
-            TensorFloat tensor = CreateTensor(_paddedData);
+            TensorFloat tensor = CreateTensor(paddedData);
             _worker.Execute(tensor);
 
             TensorFloat notesTensor = _worker.PeekOutput("StatefulPartitionedCall:1") as TensorFloat;
             TensorFloat onsetsTensor = _worker.PeekOutput("StatefulPartitionedCall:2") as TensorFloat;
-            if (notesTensor != null)
+            notesTensor.CompleteOperationsAndDownload();
+            onsetsTensor.CompleteOperationsAndDownload();
+            var note = notesTensor.ToReadOnlyArray();
+            var onsets = onsetsTensor.ToReadOnlyArray();
+
+            // Restructure notes and onsets to 2D arrays
+            float[,] notes2D = ReshapeTo2D(note, 172, 88);
+            float[,] onsets2D = ReshapeTo2D(onsets, 172, 88);
+
+            // Mise à jour des notes jouées
+            List<string> detectedNotes = UpdateActiveNotes(onsets2D, notes2D, 0.6f, 0.3f);
+            foreach (var notes in detectedNotes)
             {
-                notesTensor.CompleteOperationsAndDownload();
-                if (onsetsTensor != null)
-                {
-                    onsetsTensor.CompleteOperationsAndDownload();
-                    var note = notesTensor.ToReadOnlyArray();
-                    var onsets = onsetsTensor.ToReadOnlyArray();
-
-                    // Restructure notes and onsets to 2D arrays
-                    float[,] notes2D = ReshapeTo2D(note, 172, 88);
-                    float[,] onsets2D = ReshapeTo2D(onsets, 172, 88);
-
-                    // Mise à jour des notes jouées
-                    UpdateActiveNotes(onsets2D, notes2D, 0.5f, 0.3f, 17, 3, 11);
-                }
+                Debug.Log(notes);
             }
 
+            // Gérer les notes détectées et arrêtées
+            HandleDetectedNotes(detectedNotes);
+            
             // Attendre la durée de l'enregistrement
             yield return new WaitForSeconds(RecordingLength);
         }
     }
 
-    void Update()
+    private IEnumerator Testing()
     {
-        HandleDetectedNotes(_activeNotes);
+        yield return new WaitForSeconds(1f);
+
+        // Démarre la capture audio depuis l'audio clip
+        audioSource.clip = _clip;
+        audioSource.Play();
+
+        // Récupère les données audio de l'AudioSource
+        float[] audioData = new float[audioSource.clip.samples];
+        audioSource.clip.GetData(audioData, 0);
+
+        // Crée un tableau de la taille cible avec padding
+        float[] paddedData = new float[TargetSampleSize];
+        int copyLength = Mathf.Min(audioData.Length, TargetSampleSize);
+        System.Array.Copy(audioData, paddedData, copyLength);
+
+        // Préparer les données comme une seule fenêtre d'entrée
+        TensorFloat tensor = CreateTensor(paddedData);
+        _worker.Execute(tensor);
+
+        TensorFloat notesTensor = _worker.PeekOutput("StatefulPartitionedCall:1") as TensorFloat;
+        TensorFloat onsetsTensor = _worker.PeekOutput("StatefulPartitionedCall:2") as TensorFloat;
+        notesTensor.CompleteOperationsAndDownload();
+        onsetsTensor.CompleteOperationsAndDownload();
+        var note = notesTensor.ToReadOnlyArray();
+        var onsets = onsetsTensor.ToReadOnlyArray();
+
+        // Restructure notes and onsets to 2D arrays
+        float[,] notes2D = ReshapeTo2D(note, 172, 88);
+        float[,] onsets2D = ReshapeTo2D(onsets, 172, 88);
+
+        // Mise à jour des notes jouées
+        List<string> detectedNotes = UpdateActiveNotes(onsets2D, notes2D, 0.5f, 0.3f);
+
+        // Gérer les notes détectées et arrêtées
+        HandleDetectedNotes(detectedNotes);
+    }
+
+    private void OnDisable()
+    {
+        _worker.Dispose();
+        Microphone.End(microphone);
     }
 
     private TensorFloat CreateTensor(float[] data)
@@ -141,108 +176,59 @@ public class MicrophoneRecorder : MonoBehaviour
         return result;
     }
 
-   private void UpdateActiveNotes(float[,] onsets, float[,] notes, float onsetThreshold, float frameThreshold, int nbFrames, int minFramesForActivation, int energyTol)
-{
-    int framesCount = onsets.GetLength(0); // Total number of frames
-    int notesCount = onsets.GetLength(1); // Total number of notes (88 piano keys)
-    Dictionary<int, int> newPotentialNotes = new Dictionary<int, int>();
-
-    // Iterate through the last nbFrames of onsets
-    for (int i = framesCount - nbFrames; i < framesCount; i++)
+    private List<string> UpdateActiveNotes(float[,] onsets, float[,] notes, float onsetThreshold, float frameThreshold)
     {
-        for (int j = 0; j < notesCount; j++)
+        HashSet<string> newActiveNotes = new HashSet<string>();
+        for (int note = 0; note < onsets.GetLength(1); note++)
         {
-            if (onsets[i, j] > onsetThreshold)
+            int consecutiveFrames = 0;
+            for (int frame = 0; frame < onsets.GetLength(0); frame++)
             {
-                if (_potentialNotes.ContainsKey(j))
+                if (onsets[frame, note] > onsetThreshold)
                 {
-                    _potentialNotes[j]++;
-                }
-                else
-                {
-                    _potentialNotes.Add(j, 1);
-                }
-
-                // Check if a note has reached the minimum frames for activation
-                if (_potentialNotes[j] >= minFramesForActivation)
-                {
-                    int startFrame = i - _potentialNotes[j] + 1;
-                    int consecutiveNotes = 0;
-
-                    // Check the corresponding frames in notes
-                    for (int k = startFrame; k < Math.Min(framesCount, startFrame + energyTol); k++)
+                    consecutiveFrames++;
+                    if (consecutiveFrames >= MinFramesForActivation)
                     {
-                        if (notes[k, j] > frameThreshold)
+                        string noteName = GetNoteName(note + 21); // Ajoute l'offset MIDI pour obtenir la note correcte
+                        newActiveNotes.Add(noteName);
+                        noteEnergyCount[noteName] = EnergyTol;
+                        break;
+                    }
+                }
+                else if (notes[frame, note] > frameThreshold)
+                {
+                    string noteName = GetNoteName(note + 21);
+                    if (activeNotes.Contains(noteName))
+                    {
+                        newActiveNotes.Add(noteName);
+                        noteEnergyCount[noteName]--;
+                        if (noteEnergyCount[noteName] <= 0)
                         {
-                            consecutiveNotes++;
-                            if (consecutiveNotes >= energyTol)
-                            {
-                                string noteName = GetNoteName(j + 21);
-                                if (!_activeNotes.Contains(noteName))
-                                {
-                                    _activeNotes.Add(noteName);
-                                }
-                                else
-                                {
-                                    // Note reactivation: ensure the note is kept active without being reset
-                                    _activeNotes.Remove(noteName);
-                                    _activeNotes.Add(noteName);
-                                }
-                                break;
-                            }
-                        }
-                        else
-                        {
-                            consecutiveNotes = 0;
+                            activeNotes.Remove(noteName);
+                            noteEnergyCount.Remove(noteName);
                         }
                     }
                 }
+                else
+                {
+                    consecutiveFrames = 0;
+                }
             }
-            else
-            {
-                _potentialNotes.Remove(j);
-            }
         }
+
+        var detectedNotes = newActiveNotes.ToList();
+        return detectedNotes;
     }
-
-    // Handle potential notes at the edge of current frame window
-    foreach (var potentialNote in _potentialNotes)
-    {
-        if (potentialNote.Value < minFramesForActivation)
-        {
-            newPotentialNotes.Add(potentialNote.Key, potentialNote.Value);
-        }
-    }
-
-    _potentialNotes = newPotentialNotes;
-
-    // Remove notes that are no longer active
-    List<string> currentActiveNotes = new List<string>();
-    foreach (var note in _activeNotes)
-    {
-        int midiNumber = GetMidiNumber(note);
-        if (notes[framesCount - 1, midiNumber - 21] <= frameThreshold)
-        {
-            // Note does not meet the threshold to stay active
-            continue;
-        }
-        currentActiveNotes.Add(note);
-    }
-
-    _activeNotes = currentActiveNotes;
-}
-
 
     private void HandleDetectedNotes(List<string> detectedNotes)
     {
-        List<string> currentDetectedNotes = new List<string>(detectedNotes);
-        var stoppedKeys = _previousNotes.Except(detectedNotes).ToList();
+        var stoppedKeys = previousNotes.Except(detectedNotes).ToList();
 
         foreach (var detectedNote in detectedNotes)
         {
-            if (!_previousNotes.Contains(detectedNote) && !stoppedKeys.Contains(detectedNote))
+            if (!previousNotes.Contains(detectedNote) && !stoppedKeys.Contains(detectedNote))
             {
-                if (_tutorial)
+                if (tutorial)
                 {
                     NoteChanged?.Invoke(this, new NotePlayedEventArgs(detectedNotes, true));
                 }
@@ -256,7 +242,7 @@ public class MicrophoneRecorder : MonoBehaviour
             }
         }
 
-        if (!_tutorial)
+        if (!tutorial)
         {
             foreach (var key in stoppedKeys)
             {
@@ -265,7 +251,7 @@ public class MicrophoneRecorder : MonoBehaviour
                 pianoKeyAnimation.StopNote();
                 activeKeys.Remove(key);
             }
-            _previousNotes = currentDetectedNotes;
+            previousNotes = detectedNotes;
         }
     }
 
@@ -276,14 +262,5 @@ public class MicrophoneRecorder : MonoBehaviour
         int octave = (midiNumber / 12) - 1;
         int noteIndex = midiNumber % 12;
         return noteNames[noteIndex] + octave;
-    }
-    
-    private int GetMidiNumber(string noteName)
-    {
-        string[] noteNames = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
-        int octave = int.Parse(noteName.Substring(noteName.Length - 1));
-        string note = noteName.Substring(0, noteName.Length - 1);
-        int noteIndex = Array.IndexOf(noteNames, note);
-        return noteIndex + 12 * (octave + 1);
     }
 }
