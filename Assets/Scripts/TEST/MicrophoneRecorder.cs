@@ -4,6 +4,7 @@ using Unity.Sentis;
 using System.Collections.Generic;
 using System.Linq;
 using System;
+using Unity.VisualScripting;
 using UnityEngine.Serialization;
 
 public class MicrophoneRecorder : MonoBehaviour
@@ -15,7 +16,7 @@ public class MicrophoneRecorder : MonoBehaviour
     private Model _runtimeModel;
 
     private const int SampleRate = 22050;
-    private const float RecordingLength = 0.1f; // Durée des segments en secondes
+    private const float RecordingLength = 0.2f; // Durée des segments en secondes
     private const int TargetSampleSize = 43844; // Correspond à AUDIO_N_SAMPLES dans le code Python
     private const int MinFramesForActivation = 3; // Minimum frames to consider une note as played
     private const int EnergyTol = 11; // Tolérance de l'énergie pour maintenir une note active
@@ -23,7 +24,6 @@ public class MicrophoneRecorder : MonoBehaviour
     private AudioSource _audioSource;
     private string _microphone;
 
-    private readonly HashSet<string> _activeNotes = new HashSet<string>();
     private readonly Dictionary<string, int> _noteEnergyCount = new Dictionary<string, int>();
 
     public event EventHandler<NotePlayedEventArgs> NoteChanged;
@@ -36,8 +36,8 @@ public class MicrophoneRecorder : MonoBehaviour
 
     private float[] _audioData;
     private float[] _paddedData;
-    private List<string> _currentlyDetectedNotes = new List<string>();
-    private Dictionary<string, int> _potentialNotes = new Dictionary<string, int>();
+    private List<string> _activeNotes = new List<string>();
+    private Dictionary<int, int> _potentialNotes = new Dictionary<int, int>();
 
     private void OnEnable()
     {
@@ -108,7 +108,7 @@ public class MicrophoneRecorder : MonoBehaviour
                     float[,] onsets2D = ReshapeTo2D(onsets, 172, 88);
 
                     // Mise à jour des notes jouées
-                    UpdateActiveNotes(onsets2D, notes2D, 0.6f, 0.3f);
+                    UpdateActiveNotes(onsets2D, notes2D, 0.5f, 0.3f, 17, 3, 11);
                 }
             }
 
@@ -119,7 +119,7 @@ public class MicrophoneRecorder : MonoBehaviour
 
     void Update()
     {
-        HandleDetectedNotes(_currentlyDetectedNotes);
+        HandleDetectedNotes(_activeNotes);
     }
 
     private TensorFloat CreateTensor(float[] data)
@@ -141,74 +141,101 @@ public class MicrophoneRecorder : MonoBehaviour
         return result;
     }
 
-    private void UpdateActiveNotes(float[,] onsets, float[,] notes, float onsetThreshold, float frameThreshold)
+   private void UpdateActiveNotes(float[,] onsets, float[,] notes, float onsetThreshold, float frameThreshold, int nbFrames, int minFramesForActivation, int energyTol)
+{
+    int framesCount = onsets.GetLength(0); // Total number of frames
+    int notesCount = onsets.GetLength(1); // Total number of notes (88 piano keys)
+    Dictionary<int, int> newPotentialNotes = new Dictionary<int, int>();
+
+    // Iterate through the last nbFrames of onsets
+    for (int i = framesCount - nbFrames; i < framesCount; i++)
     {
-        HashSet<string> newActiveNotes = new HashSet<string>();
-
-        // Vérification des onsets pour les nouvelles notes
-        for (int noteIdx = 0; noteIdx < onsets.GetLength(1); noteIdx++)
+        for (int j = 0; j < notesCount; j++)
         {
-            int consecutiveFrames = 0;
-            bool potentialNote = false;
-
-            for (int frame = 0; frame < onsets.GetLength(0); frame++)
+            if (onsets[i, j] > onsetThreshold)
             {
-                if (onsets[frame, noteIdx] > onsetThreshold)
+                if (_potentialNotes.ContainsKey(j))
                 {
-                    consecutiveFrames++;
-                    if (consecutiveFrames >= MinFramesForActivation)
-                    {
-                        string noteName = GetNoteName(noteIdx + 21);
-                        if (!_activeNotes.Contains(noteName))
-                        {
-                            newActiveNotes.Add(noteName);
-                            _noteEnergyCount[noteName] = EnergyTol;
-                        }
-                        break;
-                    }
+                    _potentialNotes[j]++;
                 }
                 else
                 {
-                    consecutiveFrames = 0;
+                    _potentialNotes.Add(j, 1);
                 }
-            }
 
-            // Gérer les notes potentielles
-            if (consecutiveFrames > 0 && consecutiveFrames < MinFramesForActivation)
-            {
-                string noteName = GetNoteName(noteIdx + 21);
-                _potentialNotes[noteName] = MinFramesForActivation - consecutiveFrames;
-            }
-        }
-
-        // Vérification des frames pour maintenir les notes actives
-        for (int noteIdx = notes.GetLength(1) - 17; noteIdx < notes.GetLength(1); noteIdx++)
-        {
-            string noteName = GetNoteName(noteIdx + 21);
-            if (_activeNotes.Contains(noteName))
-            {
-                int activeFrames = 0;
-                for (int frame = 0; frame < notes.GetLength(0); frame++)
+                // Check if a note has reached the minimum frames for activation
+                if (_potentialNotes[j] >= minFramesForActivation)
                 {
-                    if (notes[frame, noteIdx] > frameThreshold)
+                    int startFrame = i - _potentialNotes[j] + 1;
+                    int consecutiveNotes = 0;
+
+                    // Check the corresponding frames in notes
+                    for (int k = startFrame; k < Math.Min(framesCount, startFrame + energyTol); k++)
                     {
-                        activeFrames++;
-                        if (activeFrames >= EnergyTol)
+                        if (notes[k, j] > frameThreshold)
                         {
-                            newActiveNotes.Add(noteName);
-                            _noteEnergyCount[noteName] = EnergyTol;
-                            break;
+                            consecutiveNotes++;
+                            if (consecutiveNotes >= energyTol)
+                            {
+                                string noteName = GetNoteName(j + 21);
+                                if (!_activeNotes.Contains(noteName))
+                                {
+                                    _activeNotes.Add(noteName);
+                                }
+                                else
+                                {
+                                    // Note reactivation: ensure the note is kept active without being reset
+                                    _activeNotes.Remove(noteName);
+                                    _activeNotes.Add(noteName);
+                                }
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            consecutiveNotes = 0;
                         }
                     }
                 }
             }
+            else
+            {
+                _potentialNotes.Remove(j);
+            }
         }
-
-        _currentlyDetectedNotes = newActiveNotes.ToList();
     }
+
+    // Handle potential notes at the edge of current frame window
+    foreach (var potentialNote in _potentialNotes)
+    {
+        if (potentialNote.Value < minFramesForActivation)
+        {
+            newPotentialNotes.Add(potentialNote.Key, potentialNote.Value);
+        }
+    }
+
+    _potentialNotes = newPotentialNotes;
+
+    // Remove notes that are no longer active
+    List<string> currentActiveNotes = new List<string>();
+    foreach (var note in _activeNotes)
+    {
+        int midiNumber = GetMidiNumber(note);
+        if (notes[framesCount - 1, midiNumber - 21] <= frameThreshold)
+        {
+            // Note does not meet the threshold to stay active
+            continue;
+        }
+        currentActiveNotes.Add(note);
+    }
+
+    _activeNotes = currentActiveNotes;
+}
+
 
     private void HandleDetectedNotes(List<string> detectedNotes)
     {
+        List<string> currentDetectedNotes = new List<string>(detectedNotes);
         var stoppedKeys = _previousNotes.Except(detectedNotes).ToList();
 
         foreach (var detectedNote in detectedNotes)
@@ -238,7 +265,7 @@ public class MicrophoneRecorder : MonoBehaviour
                 pianoKeyAnimation.StopNote();
                 activeKeys.Remove(key);
             }
-            _previousNotes = detectedNotes;
+            _previousNotes = currentDetectedNotes;
         }
     }
 
@@ -249,5 +276,14 @@ public class MicrophoneRecorder : MonoBehaviour
         int octave = (midiNumber / 12) - 1;
         int noteIndex = midiNumber % 12;
         return noteNames[noteIndex] + octave;
+    }
+    
+    private int GetMidiNumber(string noteName)
+    {
+        string[] noteNames = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
+        int octave = int.Parse(noteName.Substring(noteName.Length - 1));
+        string note = noteName.Substring(0, noteName.Length - 1);
+        int noteIndex = Array.IndexOf(noteNames, note);
+        return noteIndex + 12 * (octave + 1);
     }
 }
