@@ -68,7 +68,7 @@ public class MicrophoneRecorder : MonoBehaviour
     private IEnumerator RecordMicrophone()
     {
         // Démarre la capture audio depuis le microphone
-        audioSource.clip = Microphone.Start(microphone, true, 1, SampleRate);
+        audioSource.clip = Microphone.Start(microphone, true, 2, SampleRate);
 
         // Attendre que la capture commence
         yield return new WaitUntil(() => Microphone.GetPosition(microphone) > 0);
@@ -79,11 +79,8 @@ public class MicrophoneRecorder : MonoBehaviour
             int micPosition = Microphone.GetPosition(microphone);
             audioSource.clip.GetData(audioData, micPosition);
 
-            // Crée un tableau de la taille cible avec padding
-            System.Array.Copy(audioData, paddedData, Mathf.Min(audioData.Length, TargetSampleSize));
-
             // Préparer les données comme une seule fenêtre d'entrée
-            TensorFloat tensor = CreateTensor(paddedData);
+            TensorFloat tensor = CreateTensor(audioData);
             _worker.Execute(tensor);
 
             TensorFloat notesTensor = _worker.PeekOutput("StatefulPartitionedCall:1") as TensorFloat;
@@ -193,20 +190,6 @@ public class MicrophoneRecorder : MonoBehaviour
                         newActiveNotes.Add(noteName);
                         noteEnergyCount[noteName] = EnergyTol;
                         break;
-                    }
-                }
-                else if (notes[frame, note] > frameThreshold)
-                {
-                    string noteName = GetNoteName(note + 21);
-                    if (activeNotes.Contains(noteName))
-                    {
-                        newActiveNotes.Add(noteName);
-                        noteEnergyCount[noteName]--;
-                        if (noteEnergyCount[noteName] <= 0)
-                        {
-                            activeNotes.Remove(noteName);
-                            noteEnergyCount.Remove(noteName);
-                        }
                     }
                 }
                 else
