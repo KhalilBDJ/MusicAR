@@ -22,7 +22,7 @@ public class MicrophoneRecorder : MonoBehaviour
     private AudioSource audioSource;
     private string microphone;
 
-    private HashSet<string> activeNotes = new HashSet<string>();
+    private List<string> _activeNotes = new List<string>();
     private Dictionary<string, int> noteEnergyCount = new Dictionary<string, int>();
 
     public event EventHandler<NotePlayedEventArgs> NoteChanged;
@@ -65,6 +65,11 @@ public class MicrophoneRecorder : MonoBehaviour
         tutorial = false; //GameManager.Instance.isTutorialMode;
     }
 
+    private void Update()
+    {
+        HandleDetectedNotes(_activeNotes);
+    }
+
     private IEnumerator RecordMicrophone()
     {
         // Démarre la capture audio depuis le microphone
@@ -78,7 +83,7 @@ public class MicrophoneRecorder : MonoBehaviour
             // Récupère les données audio de l'AudioSource
             int micPosition = Microphone.GetPosition(microphone);
             audioSource.clip.GetData(audioData, micPosition);
-
+            
             // Préparer les données comme une seule fenêtre d'entrée
             TensorFloat tensor = CreateTensor(audioData);
             _worker.Execute(tensor);
@@ -95,14 +100,7 @@ public class MicrophoneRecorder : MonoBehaviour
             float[,] onsets2D = ReshapeTo2D(onsets, 172, 88);
 
             // Mise à jour des notes jouées
-            List<string> detectedNotes = UpdateActiveNotes(onsets2D, notes2D, 0.6f, 0.3f);
-            foreach (var notes in detectedNotes)
-            {
-                Debug.Log(notes);
-            }
-
-            // Gérer les notes détectées et arrêtées
-            HandleDetectedNotes(detectedNotes);
+            UpdateActiveNotes(onsets2D, notes2D, 0.6f, 0.3f);
             
             // Attendre la durée de l'enregistrement
             yield return new WaitForSeconds(RecordingLength);
@@ -142,10 +140,8 @@ public class MicrophoneRecorder : MonoBehaviour
         float[,] onsets2D = ReshapeTo2D(onsets, 172, 88);
 
         // Mise à jour des notes jouées
-        List<string> detectedNotes = UpdateActiveNotes(onsets2D, notes2D, 0.5f, 0.3f);
+        UpdateActiveNotes(onsets2D, notes2D, 0.5f, 0.3f);
 
-        // Gérer les notes détectées et arrêtées
-        HandleDetectedNotes(detectedNotes);
     }
 
     private void OnDisable()
@@ -173,24 +169,35 @@ public class MicrophoneRecorder : MonoBehaviour
         return result;
     }
 
-    private List<string> UpdateActiveNotes(float[,] onsets, float[,] notes, float onsetThreshold, float frameThreshold)
+    private void UpdateActiveNotes(float[,] onsets, float[,] notes, float onsetThreshold, float frameThreshold)
     {
-        HashSet<string> newActiveNotes = new HashSet<string>();
         for (int note = 0; note < onsets.GetLength(1); note++)
         {
+            string noteName = GetNoteName(note + 21);
             int consecutiveFrames = 0;
-            for (int frame = 0; frame < onsets.GetLength(0); frame++)
+            for (int frame = 151; frame < onsets.GetLength(0); frame++)
             {
-                if (onsets[frame, note] > onsetThreshold)
+                if (onsets[frame, note] > onsetThreshold && notes[frame,note] > frameThreshold)
                 {
                     consecutiveFrames++;
                     if (consecutiveFrames >= MinFramesForActivation)
                     {
-                        string noteName = GetNoteName(note + 21); // Ajoute l'offset MIDI pour obtenir la note correcte
-                        newActiveNotes.Add(noteName);
-                        noteEnergyCount[noteName] = EnergyTol;
-                        break;
+                        // Ajoute l'offset MIDI pour obtenir la note correcte
+                        if (!_activeNotes.Contains(noteName))
+                        {
+                            _activeNotes.Add(noteName);
+                        }
+                        else
+                        {
+                            _activeNotes.Remove(noteName);
+                            _activeNotes.Add(noteName);
+                        }
                     }
+                }
+                else if(_activeNotes.Contains(noteName) && notes[frame,note] < frameThreshold)
+                {
+                    _activeNotes.Remove(noteName);
+                    consecutiveFrames = 0;
                 }
                 else
                 {
@@ -198,13 +205,11 @@ public class MicrophoneRecorder : MonoBehaviour
                 }
             }
         }
-
-        var detectedNotes = newActiveNotes.ToList();
-        return detectedNotes;
     }
 
-    private void HandleDetectedNotes(List<string> detectedNotes)
+    private void HandleDetectedNotes(List<string> currentNotes)
     {
+        List<string> detectedNotes = new List<string>(currentNotes);
         var stoppedKeys = previousNotes.Except(detectedNotes).ToList();
 
         foreach (var detectedNote in detectedNotes)
