@@ -62,7 +62,7 @@ public class MicrophoneRecorder : MonoBehaviour
         }
 
         // Initialiser la variable tutorial
-        tutorial = false; //GameManager.Instance.isTutorialMode;
+        tutorial = GameManager.Instance.isTutorialMode;
     }
 
     private void Update()

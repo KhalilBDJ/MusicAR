@@ -27,6 +27,10 @@ public class PianoKeyAnimation : MonoBehaviour
         analyzer = scripts.GetComponent<MicrophoneRecorder>();
         pianoKeyPool = FindObjectOfType<PianoKeyPool>();
         initialScale = transform.localScale; // Sauvegarde de l'échelle initiale
+        _currentNotes = new List<string>();
+        
+        tutorial = GameManager.Instance.isTutorialMode;
+       
     }
     
     private void OnEnable()
@@ -50,14 +54,15 @@ public class PianoKeyAnimation : MonoBehaviour
 
     private void Start()
     {
-        //tutorial = GameManager.Instance.isTutorialMode;
-        tutorial = false;
+        
         if (tutorial)
         {
-            transform.localPosition = new Vector3(transform.localPosition.x, transform.localPosition.y + 1f, transform.localPosition.z);
-            contactObject = GameObject.FindGameObjectWithTag("ARObject");
+            var transform1 = transform;
+            var localPosition = transform1.localPosition;
+            localPosition = new Vector3(localPosition.x, localPosition.y + 0.5f + _duration/20, localPosition.z);
+            transform1.localPosition = localPosition;
+            contactObject = GameObject.FindGameObjectWithTag("Piano");
         }
-        
     }
 
    void Update()

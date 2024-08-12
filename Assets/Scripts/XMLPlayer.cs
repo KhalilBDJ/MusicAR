@@ -24,7 +24,12 @@ public class XMLPlayer : MonoBehaviour
         }
         xmlFacade = new XmlFacade(xmlFilePath);
         measures = xmlFacade.GetMeasureList(); // Obtenir la liste des mesures à partir du XML
-        StartCoroutine(WaitForARObjectInitialization());
+        //StartCoroutine(WaitForARObjectInitialization());
+        if (pianoKeyPool != null)
+        {
+            // Initialiser XmlFacade et commencer à jouer la musique
+            StartCoroutine(PlayMusic());
+        }
     }
 
     IEnumerator WaitForARObjectInitialization()
@@ -51,6 +56,7 @@ public class XMLPlayer : MonoBehaviour
 
     IEnumerator PlayMusic()
     {
+        yield return new WaitForSeconds(2f); 
         float secondsPerBeat = 60f / BPM; // Calculer le temps par battement en secondes
 
         foreach (Measure measure in measures)

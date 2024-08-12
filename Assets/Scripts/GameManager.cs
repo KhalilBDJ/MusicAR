@@ -31,7 +31,7 @@ public class GameManager : MonoBehaviour
             GameManager.Instance.isTutorialMode = isTutorial;
         }
         // Charger la nouvelle scène ici
-        SceneManager.LoadScene("Piano Play scene(not AR)");
+        SceneManager.LoadScene("Sandbox");
     }
 
 }
