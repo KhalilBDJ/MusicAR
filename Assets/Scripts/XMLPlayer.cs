@@ -1,8 +1,10 @@
 using System.Collections;
 using System.Collections.Generic;
+using Animations;
 using UnityEngine;
 using xmlParser;
 using symbol;
+using TMPro;
 using UnityEditor.Build.Content;
 
 public class XMLPlayer : MonoBehaviour
@@ -13,6 +15,7 @@ public class XMLPlayer : MonoBehaviour
 
     private XmlFacade xmlFacade; // Facade pour accéder aux données XML
     private List<Measure> measures = new List<Measure>();
+    
     
     
     void Start()
@@ -58,6 +61,7 @@ public class XMLPlayer : MonoBehaviour
     {
         yield return new WaitForSeconds(2f); 
         float secondsPerBeat = 60f / BPM; // Calculer le temps par battement en secondes
+        HashSet<Note> playedNotes = new HashSet<Note>(); // Utiliser un HashSet pour stocker les notes jouées
 
         foreach (Measure measure in measures)
         {
@@ -70,15 +74,25 @@ public class XMLPlayer : MonoBehaviour
                         if (symbol is Note)
                         {
                             Note note = (Note)symbol;
-                            // Jouer la note principale (et potentiellement le début de l'accord)
-                            PlayNoteInAnimation(note);
+                        
+                            // Jouer la note principale si elle n'a pas déjà été jouée
+                            if (!playedNotes.Contains(note))
+                            {
+                                PlayNoteInAnimation(note);
+                                playedNotes.Add(note);
+                            }
 
                             // Gérer les autres notes de l'accord, si présentes
                             if (note.HasChord())
                             {
                                 foreach (Note chordNote in note.GetChordList())
                                 {
-                                    PlayNoteInAnimation(chordNote);
+                                    // Jouer chaque note de l'accord si elle n'a pas déjà été jouée
+                                    if (!playedNotes.Contains(chordNote))
+                                    {
+                                        PlayNoteInAnimation(chordNote);
+                                        playedNotes.Add(chordNote);
+                                    }
                                 }
                             }
 
@@ -89,6 +103,7 @@ public class XMLPlayer : MonoBehaviour
             }
         }
     }
+
 
     void PlayNoteInAnimation(Note note)
     {

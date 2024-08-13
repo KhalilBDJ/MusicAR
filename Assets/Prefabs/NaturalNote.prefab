@@ -121,8 +121,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3641b371908a069499cc078598ded7b3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tutorial: 1
   noteName: 
+  successPercentage: {fileID: 0}
+  globalVariables: {fileID: 11400000, guid: 40c268b5da2e4a747882265af57a9b55, type: 2}
 --- !u!114 &6162347742847719930
 MonoBehaviour:
   m_ObjectHideFlags: 0
