@@ -25,15 +25,8 @@ public class XMLPlayer : MonoBehaviour
             this.enabled = false;
             return;
         }
-
-        if (PlayerPrefs.GetString("SelectedFilePath")!=null)
-        {
-            xmlFacade = new XmlFacade(PlayerPrefs.GetString("SelectedFilePath"));
-        }
-        else
-        {
-            xmlFacade = new XmlFacade(xmlFilePath);
-        }
+        
+        xmlFacade = new XmlFacade(PlayerPrefs.GetString("SelectedFile"));
         
         measures = xmlFacade.GetMeasureList(); // Obtenir la liste des mesures à partir du XML
         //StartCoroutine(WaitForARObjectInitialization());
