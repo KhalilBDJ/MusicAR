@@ -9,6 +9,6 @@ namespace SO
         public int playerCorrectNotes;
         public float playerCorrectNotesPercentage;
         public int totalNotes;
-        
+
     }
 }

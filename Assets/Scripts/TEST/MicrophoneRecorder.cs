@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System;
 using Animations;
+using SO;
+using Unity.VisualScripting;
 
 public class MicrophoneRecorder : MonoBehaviour
 {
@@ -36,6 +38,8 @@ public class MicrophoneRecorder : MonoBehaviour
 
     private float[] audioData;
     private float[] paddedData;
+
+    public GlobalVariables _globalVariables;
 
     private void OnEnable()
     {
@@ -149,6 +153,14 @@ public class MicrophoneRecorder : MonoBehaviour
     {
         _worker.Dispose();
         Microphone.End(microphone);
+        if (PlayerPrefs.GetString("SelectedSong")!= null)
+        {
+            string songName = PlayerPrefs.GetString("SelectedSong");
+            PlayerPrefs.SetInt("totalNotes_" + songName, _globalVariables.totalNotes);
+            PlayerPrefs.SetInt("correctNotes_" + songName, _globalVariables.playerCorrectNotes);
+            PlayerPrefs.SetFloat("correctNotesPercentage_" + songName, _globalVariables.playerCorrectNotesPercentage);
+        }
+        
     }
 
     private TensorFloat CreateTensor(float[] data)
