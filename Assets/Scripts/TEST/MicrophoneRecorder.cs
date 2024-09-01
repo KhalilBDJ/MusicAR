@@ -135,18 +135,23 @@ public class MicrophoneRecorder : MonoBehaviour
 
         TensorFloat notesTensor = _worker.PeekOutput("StatefulPartitionedCall:1") as TensorFloat;
         TensorFloat onsetsTensor = _worker.PeekOutput("StatefulPartitionedCall:2") as TensorFloat;
-        notesTensor.CompleteOperationsAndDownload();
-        onsetsTensor.CompleteOperationsAndDownload();
-        var note = notesTensor.ToReadOnlyArray();
-        var onsets = onsetsTensor.ToReadOnlyArray();
+        if (notesTensor != null)
+        {
+            notesTensor.CompleteOperationsAndDownload();
+            if (onsetsTensor != null)
+            {
+                onsetsTensor.CompleteOperationsAndDownload();
+                var note = notesTensor.ToReadOnlyArray();
+                var onsets = onsetsTensor.ToReadOnlyArray();
 
-        // Restructure notes and onsets to 2D arrays
-        float[,] notes2D = ReshapeTo2D(note, 172, 88);
-        float[,] onsets2D = ReshapeTo2D(onsets, 172, 88);
+                // Restructure notes and onsets to 2D arrays
+                float[,] notes2D = ReshapeTo2D(note, 172, 88);
+                float[,] onsets2D = ReshapeTo2D(onsets, 172, 88);
 
-        // Mise à jour des notes jouées
-        UpdateActiveNotes(onsets2D, notes2D, 0.5f, 0.3f);
-
+                // Mise à jour des notes jouées
+                UpdateActiveNotes(onsets2D, notes2D, 0.5f, 0.3f);
+            }
+        }
     }
 
     private void OnDisable()
@@ -161,6 +166,19 @@ public class MicrophoneRecorder : MonoBehaviour
             PlayerPrefs.SetFloat("correctNotesPercentage_" + songName, _globalVariables.playerCorrectNotesPercentage);
         }
         
+    }
+
+    public void ExitScene()
+    {
+        _worker.Dispose();
+        Microphone.End(microphone);
+        if (PlayerPrefs.GetString("SelectedSong")!= null)
+        {
+            string songName = PlayerPrefs.GetString("SelectedSong");
+            PlayerPrefs.SetInt("totalNotes_" + songName, _globalVariables.totalNotes);
+            PlayerPrefs.SetInt("correctNotes_" + songName, _globalVariables.playerCorrectNotes);
+            PlayerPrefs.SetFloat("correctNotesPercentage_" + songName, _globalVariables.playerCorrectNotesPercentage);
+        }
     }
 
     private TensorFloat CreateTensor(float[] data)

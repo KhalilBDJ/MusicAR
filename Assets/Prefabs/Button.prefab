@@ -124,7 +124,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 7047238985137170707}
-        m_TargetAssemblyTypeName: ButtonClickHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: UI.ButtonClickHandler, Assembly-CSharp
         m_MethodName: OnButtonClicked
         m_Mode: 1
         m_Arguments:

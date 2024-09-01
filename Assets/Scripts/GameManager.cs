@@ -26,12 +26,27 @@ public class GameManager : MonoBehaviour
     
     public void SetTutorialMode(bool isTutorial)
     {
-        if (GameManager.Instance != null)
+        if (GameManager.Instance != null && isTutorial)
         {
             GameManager.Instance.isTutorialMode = isTutorial;
+            SceneManager.LoadScene("Song Selection");
         }
-        // Charger la nouvelle scène ici
+        else
+        {
+            SceneManager.LoadScene("Player (not AR)");
+        }
+        
+    }
+
+    public void OpenSongSelection()
+    {
         SceneManager.LoadScene("Song Selection");
+        GameManager.Instance.isTutorialMode = false;
+    }
+
+    public void OpenPlayerStats()
+    {
+        SceneManager.LoadScene("PlayerStats");
     }
 
 }
