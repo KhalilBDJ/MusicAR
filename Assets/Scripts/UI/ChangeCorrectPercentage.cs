@@ -19,8 +19,16 @@ public class ChangeCorrectPercentage : MonoBehaviour
         {
             if (globalVariables.totalNotes>0)
             {
-                globalVariables.playerCorrectNotesPercentage =
-                    (globalVariables.playerCorrectNotes / globalVariables.totalNotes) * 100;
+                try
+                {
+                    globalVariables.playerCorrectNotesPercentage = ((float)globalVariables.playerCorrectNotes / globalVariables.totalNotes) * 100;
+
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    throw;
+                }
             }
             playerStat.text = "Réussite: " + globalVariables.playerCorrectNotes + "/" + globalVariables.totalNotes + "\n" + globalVariables.playerCorrectNotesPercentage + "%";
         }
