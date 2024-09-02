@@ -52,7 +52,7 @@ public class ARPianoPlacement : MonoBehaviour
         ARAnchor anchor = m_AnchorManager.AddAnchor(new Pose(image.transform.position, Quaternion.Euler(0, 0, 0)));
         if (anchor != null)
         {
-            currentPiano = Instantiate(piano, new Vector3(anchor.transform.position.x, anchor.transform.position.y, anchor.transform.position.z), Quaternion.Euler(0, 0, 0), anchor.transform);
+            currentPiano = Instantiate(piano, new Vector3(anchor.transform.position.x -anchor.transform.position.x/2 , anchor.transform.position.y, anchor.transform.position.z), Quaternion.Euler(0, 0, 0), anchor.transform);
         }
     }
 
