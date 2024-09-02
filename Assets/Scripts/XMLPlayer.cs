@@ -5,7 +5,6 @@ using UnityEngine;
 using xmlParser;
 using symbol;
 using TMPro;
-using UnityEditor.Build.Content;
 
 public class XMLPlayer : MonoBehaviour
 {
